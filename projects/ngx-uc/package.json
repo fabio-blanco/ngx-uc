@@ -5,6 +5,14 @@
   "author": {
     "name": "Fábio Blanco"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fabio-blanco/ngx-uc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fabio-blanco/ngx-uc/issues"
+  },
+  "homepage": "https://github.com/fabio-blanco/ngx-uc",
   "keywords": [
     "image",
     "zoom",
