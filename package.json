@@ -1,13 +1,28 @@
 {
   "name": "ngx-uc",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build && npm run cp:readme",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "cp:readme": "cp ./README.md ./dist/ngx-uc"
   },
+  "Description": "An image zoom library for Angular projects.",
+  "author": {
+    "name": "Fábio Blanco"
+  },
+  "keywords": [
+    "image",
+    "zoom",
+    "angular",
+    "component",
+    "ng",
+    "ngx",
+    "image zoom"
+  ],
+  "license": "MIT",
   "private": true,
   "dependencies": {
     "@angular/animations": "~12.1.0",
@@ -36,5 +51,10 @@
     "karma-jasmine-html-reporter": "~1.7.0",
     "ng-packagr": "^12.1.0",
     "typescript": "~4.3.2"
-  }
+  },
+  "contributors": [
+    {
+      "name": "Fábio Blanco"
+    }
+  ]
 }

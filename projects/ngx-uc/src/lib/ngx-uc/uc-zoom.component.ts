@@ -13,11 +13,11 @@ export interface Coordinates {
 })
 export class ucZoomComponent implements OnInit, AfterViewInit {
 
-  cx: number = 0;
-  cy: number = 0;
-
   @Output()
   lensPosition = new EventEmitter<Coordinates>();
+
+  private cx: number = 0;
+  private cy: number = 0;
 
   private zoomResult!: HTMLDivElement;
   private lens!: HTMLDivElement;
@@ -124,16 +124,16 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
 
     if (!this.isReady) return;
 
-    this.renderer.removeClass(this.zoomResult, 'hide-lens');
-    this.renderer.removeClass(this.lens, 'hide-lens');
+    this.renderer.removeClass(this.zoomResult, 'uc-hide-lens');
+    this.renderer.removeClass(this.lens, 'uc-hide-lens');
   }
 
   onImgMouseLeave(event: MouseEvent): void {
 
     if (!this.isReady) return;
 
-    this.renderer.addClass(this.zoomResult, 'hide-lens');
-    this.renderer.addClass(this.lens, 'hide-lens');
+    this.renderer.addClass(this.zoomResult, 'uc-hide-lens');
+    this.renderer.addClass(this.lens, 'uc-hide-lens');
   }
 
   private static getCursorPosition(event: MouseEvent, srcImg: HTMLImageElement): Coordinates {

@@ -3,5 +3,6 @@
   "dest": "../../dist/ngx-uc",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "assets": ["./resources"]
 }

@@ -1,11 +1,30 @@
 {
   "name": "ngx-uc",
   "version": "0.0.1",
+  "Description": "An image zoom library for Angular projects.",
+  "author": {
+    "name": "Fábio Blanco"
+  },
+  "keywords": [
+    "image",
+    "zoom",
+    "angular",
+    "component",
+    "ng",
+    "ngx",
+    "image zoom"
+  ],
+  "license": "MIT",
   "peerDependencies": {
     "@angular/common": "^12.0.0",
     "@angular/core": "^12.0.0"
   },
   "dependencies": {
     "tslib": "^2.2.0"
-  }
+  },
+  "contributors": [
+    {
+      "name": "Fábio Blanco"
+    }
+  ]
 }

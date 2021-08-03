@@ -1,0 +1,26 @@
+.uc-img-zoom-lens {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  /*set the size of the lens:*/
+  width: 150px;
+  height: 150px;
+}
+
+.uc-img-zoom-result {
+  position: absolute;
+  top: 0;
+  margin-left: 10px;
+  border: 1px solid #d4d4d4;
+  /*set the size of the result div:*/
+  width: 700px;
+  height: 700px;
+}
+
+.uc-img-container {
+  position: relative;
+  display: inline-block;
+}
+
+.uc-hide-lens {
+  display: none;
+}

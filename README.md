@@ -2,9 +2,52 @@
 
 An image zoom library for Angular projects.
 
+## Project status ##
+
+Ngx-uc is currently under development and there is still no releases yet. Try it at your own risk.
+
 ## Getting Started ##
 
-[//]: # (TODO: write it)
+1. To install the ngx-uc, open a terminal and at the root of your project, run:
+   ```shell
+   npm install ngx-uc
+   ```
+2. Import the style in your `angular.json` file in the styles entry (project > architect > build > styles):
+   ```json
+   "styles": [
+     "node_modules/ngx-uc/resources/uc.css",
+     "src/styles.css"
+   ]
+   ```
+   
+3. Import the module:
+   ```typescript
+   import { NgModule } from '@angular/core';
+
+   import { NgxUcModule } from 'ngx-uc';
+
+   import { AppRoutingModule } from './app-routing.module';
+   import { AppComponent } from './app.component';
+
+   @NgModule({
+     declarations: [
+       AppComponent
+    ],
+    imports: [
+      BrowserModule,
+      AppRoutingModule,
+      NgxUcModule
+    ],
+    providers: [],
+      bootstrap: [AppComponent]
+   })
+   export class AppModule { }
+   ```
+   
+4. In a template, add the `uc-zoom` directive to an image tag:
+   ```html
+   <img src="your-image.jpg" uc-zoom >
+   ```
 
 ## Copyright and license ##
 
