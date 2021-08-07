@@ -6,6 +6,9 @@ An image zoom library for Angular projects.
 
 Ngx-uc is currently under development and there is still no releases yet. Try it at your own risk.
 
+[The changelog](https://github.com/fabio-blanco/ngx-uc/blob/master/CHANGELOG.md) details the 
+progress of the work.
+
 ## Getting Started ##
 
 1. To install the ngx-uc, open a terminal and at the root of your project, run:
