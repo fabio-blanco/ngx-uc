@@ -8,8 +8,7 @@ export interface Coordinates {
 @Component({
   selector: 'img[uc-zoom]',
   exportAs: 'ucNgZoom',
-  templateUrl: './uc-zoom.component.html',
-  styleUrls: ['./uc-zoom.component.css']
+  template: '<ng-content></ng-content>'
 })
 export class ucZoomComponent implements OnInit, AfterViewInit {
 
@@ -57,8 +56,8 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
   attachListenersToImage(srcImg:HTMLImageElement): void {
     this.renderer.listen(srcImg, 'mousemove', event => {this.onImgMouseMove(event, srcImg)});
     this.renderer.listen(srcImg, 'mouseenter', event => {this.onImgMouseEnter(event)});
-    this.renderer.listen(srcImg, 'onload', () => this.onImageLoaded());
-    //TODO: implement onerror listener if necessary
+    this.renderer.listen(srcImg, 'load', () => this.onImageLoaded(srcImg));
+    this.renderer.listen(srcImg, 'error', ()=> this.onImageLoadFailed() );
   }
 
   initializeLensAndResult(srcImg:HTMLImageElement): void {
@@ -80,10 +79,16 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
   private initializeZoomDiv(srcImg: HTMLImageElement) {
     const backGroundImage = `url("${srcImg.src}")`;
     this.renderer.setStyle(this.zoomResult, 'background-image', backGroundImage);
+    if(this.isImageLoaded) {
+      this.initializeZoomDivBackgroundSize(srcImg);
+    }
+    this.renderer.addClass(this.zoomResult, 'uc-hide-lens');
+  }
+
+  private initializeZoomDivBackgroundSize(srcImg: HTMLImageElement) {
     const bw = srcImg.width * this.cx;
     const bh = srcImg.height * this.cy;
     this.renderer.setStyle(this.zoomResult, 'background-size', `${bw}px ${bh}px`);
-    this.renderer.addClass(this.zoomResult, 'uc-hide-lens');
   }
 
   private calculateRatioBetweenResultAndLens() {
@@ -94,6 +99,7 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
 
   creatLens(srcImg:HTMLImageElement):HTMLDivElement {
     const lens: HTMLDivElement = this.renderer.createElement('div');
+    //TODO: address the id creation to support multiple uc-zoom components on the same page
     this.renderer.setProperty(lens, 'id', 'uc-zoom-lens');
     this.renderer.addClass(lens, 'uc-img-zoom-lens');
     this.renderer.insertBefore(this.renderer.parentNode(srcImg), lens, srcImg);
@@ -102,6 +108,7 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
 
   createZoomResultContainer(srcImg:HTMLImageElement): HTMLDivElement {
     const zoomResult: HTMLDivElement = this.renderer.createElement('div');
+    //TODO: address the id creation to support multiple uc-zoom components on the same page
     this.renderer.setProperty(zoomResult, 'id', 'uc-zoom-result');
     this.renderer.addClass(zoomResult, 'uc-img-zoom-result');
     this.renderer.setStyle(zoomResult, 'left', `${srcImg.width}px`);
@@ -147,8 +154,13 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
     this.renderer.addClass(this.lens, 'uc-hide-lens');
   }
 
-  onImageLoaded() {
+  onImageLoaded(srcImg:HTMLImageElement) {
+    this.initializeZoomDivBackgroundSize(srcImg);
     this.isImageLoaded = true;
+  }
+
+  onImageLoadFailed() {
+    console.error('uc-zoom: It was not possible to load the image!');
   }
 
   /**

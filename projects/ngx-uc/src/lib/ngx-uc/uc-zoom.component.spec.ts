@@ -92,8 +92,9 @@ describe('ucZoomComponent', () => {
 
     expect(renderer.listen).toHaveBeenCalledWith(img, 'mousemove',jasmine.any(Function));
     expect(renderer.listen).toHaveBeenCalledWith(img, 'mouseenter',jasmine.any(Function));
-    expect(renderer.listen).toHaveBeenCalledWith(img, 'onload',jasmine.any(Function));
-    expect(renderer.listen).toHaveBeenCalledTimes(3);
+    expect(renderer.listen).toHaveBeenCalledWith(img, 'load',jasmine.any(Function));
+    expect(renderer.listen).toHaveBeenCalledWith(img, 'error',jasmine.any(Function));
+    expect(renderer.listen).toHaveBeenCalledTimes(4);
   });
 
   it('.creatLens should create the lens div and attach before the given image', () => {
@@ -114,7 +115,7 @@ describe('ucZoomComponent', () => {
     const createdLens = component.creatLens(img);
 
     expect(createdLens).toBe(lensDiv);
-    expect(createdLens.getAttribute('id')).toBe('uc-zoom-lens');
+    expect(createdLens.id).toBe('uc-zoom-lens');
     expect(createdLens.classList.contains('uc-img-zoom-lens')).toBeTruthy();
     expect(renderer.parentNode).toHaveBeenCalledOnceWith(img);
     expect(renderer.insertBefore).toHaveBeenCalledOnceWith(parent, createdLens, img);
@@ -140,7 +141,7 @@ describe('ucZoomComponent', () => {
     const createdZoomResultDiv = component.createZoomResultContainer(img);
 
     expect(createdZoomResultDiv).toBe(zoomResultDiv);
-    expect(createdZoomResultDiv.getAttribute('id')).toBe('uc-zoom-result');
+    expect(createdZoomResultDiv.id).toBe('uc-zoom-result');
     expect(createdZoomResultDiv.classList.contains('uc-img-zoom-result')).toBeTruthy();
     expect(createdZoomResultDiv.style.left).toBe('10px');
     expect(renderer.parentNode).toHaveBeenCalledOnceWith(img);
@@ -186,7 +187,49 @@ describe('ucZoomComponent', () => {
     expect(renderer.listen).toHaveBeenCalledTimes(2);
   });
 
-  it('.initializeZoomDiv should initialize zoom div by setting the given image as the background and its size and by hiding it', () => {
+  it('.initializeZoomDiv should initialize zoom div by setting the given image as the background, initializing its size and by hiding it', () => {
+    const fakeSrc = 'anyimage.jpeg';
+    const fakeWidth = 10;
+    const fakeHeight = 20;
+
+    const imgStub: Partial<HTMLImageElement> = {
+      src: fakeSrc,
+      width: fakeWidth,
+      height: fakeHeight
+    };
+
+    spyOn<any>(component, 'initializeZoomDivBackgroundSize');
+    component['isImageLoaded'] = true;
+    component['zoomResult'] = document.createElement('div');
+
+    (component as any).initializeZoomDiv(imgStub as HTMLImageElement);
+
+    expect(component['zoomResult'].style.backgroundImage).toBe(`url("${fakeSrc}")`);
+    expect(component['initializeZoomDivBackgroundSize']).toHaveBeenCalledOnceWith(imgStub as HTMLImageElement);
+    expect(component['zoomResult'].classList.contains('uc-hide-lens'));
+  });
+
+  it('.initializeZoomDiv should not initialize zoom background if image is not yet loaded', () => {
+    const fakeSrc = 'anyimage.jpeg';
+    const fakeWidth = 10;
+    const fakeHeight = 20;
+
+    const imgStub: Partial<HTMLImageElement> = {
+      src: fakeSrc,
+      width: fakeWidth,
+      height: fakeHeight
+    };
+
+    spyOn<any>(component, 'initializeZoomDivBackgroundSize');
+    component['isImageLoaded'] = false;
+    component['zoomResult'] = document.createElement('div');
+
+    (component as any).initializeZoomDiv(imgStub as HTMLImageElement);
+
+    expect(component['initializeZoomDivBackgroundSize']).not.toHaveBeenCalled();
+  });
+
+  it('.initializeZoomDivBackgroundSize should set the background image size of the zoom div', () => {
     const fakeSrc = 'anyimage.jpeg';
     const fakeWidth = 10;
     const fakeHeight = 20;
@@ -201,11 +244,29 @@ describe('ucZoomComponent', () => {
     component['cy'] = 2;
     component['zoomResult'] = document.createElement('div');
 
-    (component as any).initializeZoomDiv(imgStub as HTMLImageElement);
+    (component as any).initializeZoomDivBackgroundSize(imgStub as HTMLImageElement);
 
-    expect(component['zoomResult'].style.backgroundImage).toBe(`url("${fakeSrc}")`);
     expect(component['zoomResult'].style.backgroundSize).toBe('30px 40px');
-    expect(component['zoomResult'].classList.contains('uc-hide-lens'));
+  });
+
+  it('.onImageLoaded should initialize the background image size of the zoom div and set the isImageLoaded flag', ()=> {
+    const fakeSrc = 'anyimage.jpeg';
+    const fakeWidth = 10;
+    const fakeHeight = 20;
+
+    const imgStub: Partial<HTMLImageElement> = {
+      src: fakeSrc,
+      width: fakeWidth,
+      height: fakeHeight
+    };
+
+    spyOn<any>(component, 'initializeZoomDivBackgroundSize');
+
+    component.onImageLoaded(imgStub as HTMLImageElement);
+
+    expect(component['initializeZoomDivBackgroundSize']).toHaveBeenCalledOnceWith(imgStub as HTMLImageElement);
+    expect(component['isImageLoaded']).toBeTrue();
+
   });
 
   it('.calculateRatioBetweenResultAndLens should calculate the ratio between result and lens', () => {
