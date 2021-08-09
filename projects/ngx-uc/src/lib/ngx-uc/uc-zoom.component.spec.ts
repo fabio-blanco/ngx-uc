@@ -7,7 +7,8 @@ import {ucZoomComponent} from './uc-zoom.component';
 
 @Component({
   template: `
-<img src="https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260" uc-zoom>
+<img id="theImage" src="https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+     [style]="{'width': '500px'}" uc-zoom>
   `
 })
 class TestImageComponent {
@@ -525,4 +526,139 @@ describe('ucZoomComponent', () => {
 
     expect(isLoaded).toBeTrue();
   });
+
+
+  it('.isImageAlreadyLoaded should return false if image is not completely loaded', () => {
+
+    const imgFake: HTMLImageElement = {
+      complete: false,
+      naturalHeight: 0
+    } as any;
+
+    const isLoaded = (ucZoomComponent as any).isImageAlreadyLoaded(imgFake);
+
+    expect(isLoaded).toBeFalse();
+  });
+});
+
+
+describe('ucZoomComponent as a directive in an image html tag', () => {
+  let component: TestImageComponent;
+  let fixture: ComponentFixture<TestImageComponent>;
+
+  let wrapperDiv: any;
+  let image: HTMLImageElement;
+
+  beforeEach(async () => {
+
+    await TestBed.configureTestingModule({
+      declarations: [ TestImageComponent, ucZoomComponent ],
+      providers: [Renderer2]
+    }).compileComponents();
+
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(TestImageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    wrapperDiv = fixture.nativeElement.querySelector('div.uc-img-container');
+    image = fixture.nativeElement.querySelector('#theImage');
+  });
+
+  it('should properly wrap the image', () => {
+    expect(wrapperDiv).toBeTruthy();
+  });
+
+  it('wrapper div should have as a first child the lens', () => {
+    const lens = wrapperDiv && wrapperDiv.querySelector(':first-child');
+    expect(lens).toBeTruthy();
+
+    expect(lens.classList.contains('uc-img-zoom-lens')).toBeTrue();
+    expect(lens.id).toBe('uc-zoom-lens');
+  });
+
+  it('wrapper div should have the original image tag as a child', () => {
+    const originalImage =  wrapperDiv.querySelector('img');
+    expect(originalImage).toBeTruthy();
+
+    expect(originalImage.id).toBe('theImage');
+  });
+
+  it('wrapper div should have, as a child, the zoom result div right before the image tag', () => {
+    const zoomResult = wrapperDiv && wrapperDiv.querySelector('#theImage + *');
+    expect(zoomResult).toBeTruthy();
+
+    expect(zoomResult.classList.contains('uc-img-zoom-result')).toBeTrue();
+    expect(zoomResult.id).toBe('uc-zoom-result');
+  });
+
+  it('the lens and the zoom result divs should be hidden at its creation', () => {
+    const zoomResultDiv = wrapperDiv.querySelector('#uc-zoom-result');
+    const lensDiv = wrapperDiv.querySelector('#uc-zoom-lens');
+
+    expect(zoomResultDiv && zoomResultDiv.classList.contains('uc-hide-lens')).toBeTrue();
+    expect(lensDiv && lensDiv.classList.contains('uc-hide-lens')).toBeTrue();
+  });
+
+  it('should detect mouseenter event and display the lens and zoom result accordingly', () => {
+
+    const eventMouseEnter = new MouseEvent('mouseenter');
+
+    image.dispatchEvent(eventMouseEnter);
+
+    setTimeout(() => {
+      fixture.detectChanges();
+      const zoomResultDiv = fixture.nativeElement.querySelector('#uc-zoom-result');
+      const lensDiv = fixture.nativeElement.querySelector('#uc-zoom-lens');
+
+      expect(zoomResultDiv && !zoomResultDiv.classList.contains('uc-hide-lens')).toBeTrue();
+      expect(lensDiv && !lensDiv.classList.contains('uc-hide-lens')).toBeTrue();
+    }, 200);
+
+  });
+
+  it('should detect mouseover event and update the lens position and the zoom visualization position', () => {
+
+    const imageRect = image.getBoundingClientRect();
+
+    const eventMouseOver = new MouseEvent('mouseover', {
+      clientX: imageRect.left + 20,
+      clientY: imageRect.top - 20
+    });
+
+    image.dispatchEvent(eventMouseOver);
+
+    setTimeout(() => {
+      fixture.detectChanges();
+
+      const zoomResultDiv = fixture.nativeElement.querySelector('#uc-zoom-result');
+      const lensDiv = fixture.nativeElement.querySelector('#uc-zoom-lens');
+
+      expect(lensDiv.style.left).toBeTruthy();
+      expect(zoomResultDiv.style.backgroundPosition).toBeTruthy();
+    }, 200);
+  });
+
+  it('should detect mouseleave event and hide the lens and zoom result accordingly', () => {
+
+    const zoomResultDiv = wrapperDiv.querySelector('#uc-zoom-result');
+    const lensDiv = wrapperDiv.querySelector('#uc-zoom-lens');
+
+    zoomResultDiv.classList.remove('uc-hide-lens');
+    lensDiv.classList.remove('uc-hide-lens');
+
+    const eventMouseLeave = new MouseEvent('mouseleave');
+
+    image.dispatchEvent(eventMouseLeave);
+
+    setTimeout(() => {
+      fixture.detectChanges();
+
+      expect(zoomResultDiv && zoomResultDiv.classList.contains('uc-hide-lens')).toBeTrue();
+      expect(lensDiv && lensDiv.classList.contains('uc-hide-lens')).toBeTrue();
+    }, 200);
+  });
+
 });

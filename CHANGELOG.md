@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Unit tests
+
+### Fixed
+ 
+- Zoom result background not initialized when image is not fully loaded
 
 ## [Initial Alpha Releases]
 
@@ -22,4 +29,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 [Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...HEAD
+[Initial Alpha Releases]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...HEAD
 [0.0.1]: https://github.com/fabio-blanco/ngx-uc/releases/tag/0.0.1
