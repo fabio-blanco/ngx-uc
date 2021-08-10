@@ -4,7 +4,8 @@ An image zoom library for Angular projects.
 
 ## Project status ##
 
-Ngx-uc is currently under development and there is still no releases yet. Try it at your own risk.
+Ngx-uc is currently under development and there is still no official releases yet. All initial alpha 
+releases (all 0.x.x versions) can have breaking changes. Try it at your own risk.
 
 [The changelog](https://github.com/fabio-blanco/ngx-uc/blob/master/CHANGELOG.md) details the 
 progress of the work.
@@ -49,7 +50,7 @@ progress of the work.
    
 4. In a template, add the `uc-zoom` directive to an image tag:
    ```html
-   <img src="your-image.jpg" uc-zoom >
+   <img src="your-image.jpg" uc-zoom-view >
    ```
 
 ## Copyright and license ##

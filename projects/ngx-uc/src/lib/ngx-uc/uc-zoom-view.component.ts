@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, OnInit, Output, Renderer2} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, Renderer2} from '@angular/core';
 
 export interface Coordinates {
   x: number,
@@ -6,11 +6,11 @@ export interface Coordinates {
 }
 
 @Component({
-  selector: 'img[uc-zoom]',
+  selector: 'img[uc-zoom-view]',
   exportAs: 'ucNgZoom',
   template: '<ng-content></ng-content>'
 })
-export class ucZoomComponent implements OnInit, AfterViewInit {
+export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @Output()
   lensPosition = new EventEmitter<Coordinates>();
@@ -18,12 +18,15 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
   private cx: number = 0;
   private cy: number = 0;
 
+  private outerDiv!: HTMLDivElement;
   private zoomResult!: HTMLDivElement;
   private lens!: HTMLDivElement;
   private isInitialized = false;
   private isImageLoaded = false;
-  //TODO: evaluate if this getter should become an output
-  private get isReady() {
+
+  private unListeners: (() => void)[] = [];
+
+  get isReady() {
     return this.isInitialized && this.isImageLoaded;
   }
 
@@ -33,13 +36,29 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
   }
 
+  ngOnDestroy(): void {
+    this.unListeners.forEach(unl => unl());
+    if(this.elRef && this.elRef.nativeElement instanceof HTMLImageElement) {
+      this.unWrapImage(this.elRef.nativeElement);
+    }
+  }
+
   ngAfterViewInit(): void {
     const element: HTMLElement = this.getNativeElement();
-    this.wrapImage(element as HTMLImageElement);
+    this.outerDiv = this.wrapImage(element as HTMLImageElement);
     this.attachListenersToImage(element as HTMLImageElement);
     this.initializeLensAndResult(element as HTMLImageElement);
     this.isInitialized = true;
-    this.isImageLoaded = ucZoomComponent.isImageAlreadyLoaded(element as HTMLImageElement);
+    this.isImageLoaded = ucZoomViewComponent.isImageAlreadyLoaded(element as HTMLImageElement);
+  }
+
+  unWrapImage(srcImg:HTMLImageElement): void {
+    this.renderer.removeChild(this.outerDiv, srcImg);
+    this.renderer.removeChild(this.outerDiv, this.lens);
+    this.renderer.removeChild(this.outerDiv, this.zoomResult);
+    const parent = this.renderer.parentNode(this.outerDiv);
+    this.renderer.insertBefore(parent, srcImg, this.outerDiv, true);
+    this.renderer.removeChild(parent, this.outerDiv);
   }
 
   wrapImage(srcImg:HTMLImageElement):HTMLDivElement {
@@ -54,10 +73,10 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
   }
 
   attachListenersToImage(srcImg:HTMLImageElement): void {
-    this.renderer.listen(srcImg, 'mousemove', event => {this.onImgMouseMove(event, srcImg)});
-    this.renderer.listen(srcImg, 'mouseenter', event => {this.onImgMouseEnter(event)});
-    this.renderer.listen(srcImg, 'load', () => this.onImageLoaded(srcImg));
-    this.renderer.listen(srcImg, 'error', ()=> this.onImageLoadFailed() );
+    this.unListeners.push(this.renderer.listen(srcImg, 'mousemove', event => {this.onImgMouseMove(event, srcImg)}));
+    this.unListeners.push(this.renderer.listen(srcImg, 'mouseenter', event => {this.onImgMouseEnter(event)}));
+    this.unListeners.push(this.renderer.listen(srcImg, 'load', () => this.onImageLoaded(srcImg)));
+    this.unListeners.push(this.renderer.listen(srcImg, 'error', ()=> this.onImageLoadFailed() ));
   }
 
   initializeLensAndResult(srcImg:HTMLImageElement): void {
@@ -99,8 +118,6 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
 
   creatLens(srcImg:HTMLImageElement):HTMLDivElement {
     const lens: HTMLDivElement = this.renderer.createElement('div');
-    //TODO: address the id creation to support multiple uc-zoom components on the same page
-    this.renderer.setProperty(lens, 'id', 'uc-zoom-lens');
     this.renderer.addClass(lens, 'uc-img-zoom-lens');
     this.renderer.insertBefore(this.renderer.parentNode(srcImg), lens, srcImg);
     return lens;
@@ -108,8 +125,6 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
 
   createZoomResultContainer(srcImg:HTMLImageElement): HTMLDivElement {
     const zoomResult: HTMLDivElement = this.renderer.createElement('div');
-    //TODO: address the id creation to support multiple uc-zoom components on the same page
-    this.renderer.setProperty(zoomResult, 'id', 'uc-zoom-result');
     this.renderer.addClass(zoomResult, 'uc-img-zoom-result');
     this.renderer.setStyle(zoomResult, 'left', `${srcImg.width}px`);
     this.renderer.appendChild(this.renderer.parentNode(srcImg), zoomResult);
@@ -124,7 +139,7 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
 
     const srcImg = imgElement? imgElement : event.target as HTMLImageElement;
 
-    const lensPos = ucZoomComponent.calculateLensPosition(event, srcImg, this.lens);
+    const lensPos = ucZoomViewComponent.calculateLensPosition(event, srcImg, this.lens);
     this.lensPosition.emit(lensPos);
 
     /* Set the position of the lens: */
@@ -181,7 +196,7 @@ export class ucZoomComponent implements OnInit, AfterViewInit {
 
   private static calculateLensPosition(event: MouseEvent, srcImg: HTMLImageElement, lens: HTMLDivElement): Coordinates {
     /* Get the cursor's x and y positions: */
-    const pos = ucZoomComponent.getCursorPosition(event, srcImg);
+    const pos = ucZoomViewComponent.getCursorPosition(event, srcImg);
 
     /* Calculate the position of the lens: */
     let x = pos.x - (lens.offsetWidth / 2);

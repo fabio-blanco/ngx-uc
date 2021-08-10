@@ -1,14 +1,14 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {Component, Renderer2} from "@angular/core";
+import {Component, ElementRef, Renderer2} from "@angular/core";
 
-import {ucZoomComponent} from './uc-zoom.component';
+import {ucZoomViewComponent} from './uc-zoom-view.component';
 
 
 
 @Component({
   template: `
 <img id="theImage" src="https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
-     [style]="{'width': '500px'}" uc-zoom>
+     [style]="{'width': '500px'}" uc-zoom-view>
   `
 })
 class TestImageComponent {
@@ -16,21 +16,21 @@ class TestImageComponent {
 }
 
 
-describe('ucZoomComponent', () => {
-  let component: ucZoomComponent;
-  let fixture: ComponentFixture<ucZoomComponent>;
+describe('ucZoomViewComponent', () => {
+  let component: ucZoomViewComponent;
+  let fixture: ComponentFixture<ucZoomViewComponent>;
 
   beforeEach(async () => {
 
     await TestBed.configureTestingModule({
-      declarations: [ ucZoomComponent ],
+      declarations: [ ucZoomViewComponent ],
       providers: [Renderer2]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ucZoomComponent);
+    fixture = TestBed.createComponent(ucZoomViewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -43,7 +43,8 @@ describe('ucZoomComponent', () => {
     const img: HTMLImageElement = new Image(10, 10);
     spyOn<any>(component, 'getNativeElement').and.returnValue(img);
 
-    spyOn(component, 'wrapImage');
+    const wrapperDiv = document.createElement('div');
+    spyOn(component, 'wrapImage').and.returnValue(wrapperDiv);
     spyOn(component, 'attachListenersToImage');
     spyOn(component, 'initializeLensAndResult');
 
@@ -53,6 +54,7 @@ describe('ucZoomComponent', () => {
     expect(component.attachListenersToImage).toHaveBeenCalledOnceWith(img);
     expect(component.initializeLensAndResult).toHaveBeenCalledOnceWith(img);
     expect(component['isInitialized']).toBeTruthy();
+    expect(component['outerDiv']).toBeDefined();
   });
 
   it('.wrapImage should wrap the given image in a div container', () => {
@@ -70,7 +72,7 @@ describe('ucZoomComponent', () => {
     spyOn(renderer, 'removeChild');
     spyOn(renderer, 'appendChild');
 
-    component.wrapImage(img);
+    const returnedWrapperDiv = component.wrapImage(img);
 
     expect(renderer.parentNode).toHaveBeenCalledWith(img);
     expect(renderer.createElement).toHaveBeenCalledOnceWith('div');
@@ -79,6 +81,62 @@ describe('ucZoomComponent', () => {
     expect(renderer.insertBefore).toHaveBeenCalledOnceWith(parent, wrapperDiv, img);
     expect(renderer.removeChild).toHaveBeenCalledOnceWith(parent, img, true);
     expect(renderer.appendChild).toHaveBeenCalledOnceWith(wrapperDiv, img);
+    expect(returnedWrapperDiv).toBe(wrapperDiv);
+  });
+
+  it('.unWrapImage should unwrap the image letting it in the state it was before wrapped', () => {
+    const img: HTMLImageElement = new Image(10, 10);
+
+    const renderer = fixture.debugElement.injector.get(Renderer2);
+
+    spyOn(renderer, 'removeChild');
+
+    const parent = document.body;
+    spyOn(renderer, 'parentNode').and.returnValue(parent);
+
+    spyOn(renderer, 'insertBefore');
+
+    component['outerDiv'] = document.createElement('div');
+    component['lens'] = document.createElement('div');
+    component['zoomResult'] = document.createElement('div');
+
+    component.unWrapImage(img);
+
+    expect(renderer.removeChild).toHaveBeenCalledWith(component['outerDiv'], img);
+    expect(renderer.removeChild).toHaveBeenCalledWith(component['outerDiv'], component['lens']);
+    expect(renderer.removeChild).toHaveBeenCalledWith(component['outerDiv'], component['zoomResult']);
+    expect(renderer.parentNode).toHaveBeenCalledWith(component['outerDiv']);
+    expect(renderer.insertBefore).toHaveBeenCalledWith(parent, img, component['outerDiv'], true);
+    expect(renderer.removeChild).toHaveBeenCalledWith(parent, component['outerDiv']);
+
+  });
+
+  it('.ngOnDestroy should call the unwrap operation', () => {
+    const img: HTMLImageElement = new Image(10, 10);
+
+    spyOn(component, 'unWrapImage');
+
+    const elRef = new ElementRef(img);
+
+    const originalElRef = component['elRef'];
+    component['elRef'] = elRef;
+
+    const originalUnListeners = component['unListeners'];
+
+    component['unListeners'] = [];
+
+    let isAllUnlistenersCalled = false;
+    component['unListeners'].push(() => isAllUnlistenersCalled=true);
+    component['unListeners'].push(() => {if(isAllUnlistenersCalled) isAllUnlistenersCalled=true});
+
+    component.ngOnDestroy();
+
+    expect(component.unWrapImage).toHaveBeenCalledWith(elRef.nativeElement);
+    expect(isAllUnlistenersCalled).toBeTrue();
+
+    component['elRef'] = originalElRef;
+    component['unListeners'] = originalUnListeners;
+
   });
 
   it('.attachListenersToImage should attach the mousemove and mouseenter listeners to the given image', () => {
@@ -86,7 +144,11 @@ describe('ucZoomComponent', () => {
 
     const renderer = fixture.debugElement.injector.get(Renderer2);
 
-    spyOn(renderer, 'listen');
+    const originalUnListeners = component['unListeners'];
+
+    component['unListeners'] = [];
+
+    spyOn(renderer, 'listen').and.returnValue(() => {});
 
     component.attachListenersToImage(img);
 
@@ -95,6 +157,9 @@ describe('ucZoomComponent', () => {
     expect(renderer.listen).toHaveBeenCalledWith(img, 'load',jasmine.any(Function));
     expect(renderer.listen).toHaveBeenCalledWith(img, 'error',jasmine.any(Function));
     expect(renderer.listen).toHaveBeenCalledTimes(4);
+    expect(component['unListeners'].length).toBe(4);
+
+    component['unListeners'] = originalUnListeners;
   });
 
   it('.creatLens should create the lens div and attach before the given image', () => {
@@ -115,10 +180,10 @@ describe('ucZoomComponent', () => {
     const createdLens = component.creatLens(img);
 
     expect(createdLens).toBe(lensDiv);
-    expect(createdLens.id).toBe('uc-zoom-lens');
     expect(createdLens.classList.contains('uc-img-zoom-lens')).toBeTruthy();
     expect(renderer.parentNode).toHaveBeenCalledOnceWith(img);
     expect(renderer.insertBefore).toHaveBeenCalledOnceWith(parent, createdLens, img);
+    expect(component['lens']).toBeDefined();
 
   });
 
@@ -141,11 +206,12 @@ describe('ucZoomComponent', () => {
     const createdZoomResultDiv = component.createZoomResultContainer(img);
 
     expect(createdZoomResultDiv).toBe(zoomResultDiv);
-    expect(createdZoomResultDiv.id).toBe('uc-zoom-result');
     expect(createdZoomResultDiv.classList.contains('uc-img-zoom-result')).toBeTruthy();
     expect(createdZoomResultDiv.style.left).toBe('10px');
     expect(renderer.parentNode).toHaveBeenCalledOnceWith(img);
     expect(renderer.appendChild).toHaveBeenCalledOnceWith(parent, createdZoomResultDiv);
+    expect(component['zoomResult']).toBeDefined();
+
   });
 
   it('.initializeLensAndResult should initialize lens and zoom result', () => {
@@ -294,11 +360,11 @@ describe('ucZoomComponent', () => {
 
     component['isImageLoaded'] = false;
 
-    spyOn<any>(ucZoomComponent, 'calculateLensPosition');
+    spyOn<any>(ucZoomViewComponent, 'calculateLensPosition');
 
     component.onImgMouseMove(eventFake);
 
-    expect(ucZoomComponent['calculateLensPosition']).not.toHaveBeenCalled();
+    expect(ucZoomViewComponent['calculateLensPosition']).not.toHaveBeenCalled();
 
   });
 
@@ -311,7 +377,7 @@ describe('ucZoomComponent', () => {
     component['isImageLoaded'] = true;
     component['isInitialized'] = true;
 
-    spyOn<any>(ucZoomComponent, 'calculateLensPosition').and.returnValue({x: 5, y: 5});
+    spyOn<any>(ucZoomViewComponent, 'calculateLensPosition').and.returnValue({x: 5, y: 5});
 
     const renderer = fixture.debugElement.injector.get(Renderer2);
 
@@ -319,7 +385,7 @@ describe('ucZoomComponent', () => {
 
     component.onImgMouseMove(eventFake, otherImgDummy);
 
-    expect(ucZoomComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, otherImgDummy, jasmine.any(Object));
+    expect(ucZoomViewComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, otherImgDummy, jasmine.any(Object));
   });
 
   it('.onImgMouseMove should use image provided by event if no other image is provided', () => {
@@ -333,7 +399,7 @@ describe('ucZoomComponent', () => {
     component['isImageLoaded'] = true;
     component['isInitialized'] = true;
 
-    spyOn<any>(ucZoomComponent, 'calculateLensPosition').and.returnValue({x: 5, y: 5});
+    spyOn<any>(ucZoomViewComponent, 'calculateLensPosition').and.returnValue({x: 5, y: 5});
 
     const renderer = fixture.debugElement.injector.get(Renderer2);
 
@@ -341,7 +407,7 @@ describe('ucZoomComponent', () => {
 
     component.onImgMouseMove(eventFake);
 
-    expect(ucZoomComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, eventImgDummy, jasmine.any(Object));
+    expect(ucZoomViewComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, eventImgDummy, jasmine.any(Object));
   });
 
   it('.onImgMouseMove should sets the position of the lens and the zoom background position according to the given mouse event', () => {
@@ -362,11 +428,11 @@ describe('ucZoomComponent', () => {
     component['lens'] = document.createElement('div');
     component['zoomResult'] = document.createElement('div');
 
-    spyOn<any>(ucZoomComponent, 'calculateLensPosition').and.returnValue({x: 10, y: 20});
+    spyOn<any>(ucZoomViewComponent, 'calculateLensPosition').and.returnValue({x: 10, y: 20});
 
     component.onImgMouseMove(eventFake);
 
-    expect(ucZoomComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, eventImgDummy, component['lens']);
+    expect(ucZoomViewComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, eventImgDummy, component['lens']);
     expect(component['lens'].style.left).toBe('10px');
     expect(component['lens'].style.top).toBe('20px');
     expect(component['zoomResult'].style.backgroundPosition).toBe('-20px -60px');
@@ -386,7 +452,7 @@ describe('ucZoomComponent', () => {
 
     const dummyPosition = {x: 5, y: 6};
 
-    spyOn<any>(ucZoomComponent, 'calculateLensPosition').and.returnValue(dummyPosition);
+    spyOn<any>(ucZoomViewComponent, 'calculateLensPosition').and.returnValue(dummyPosition);
 
     const renderer = fixture.debugElement.injector.get(Renderer2);
 
@@ -396,7 +462,7 @@ describe('ucZoomComponent', () => {
 
     component.onImgMouseMove(eventFake);
 
-    expect(ucZoomComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, eventImgDummy, jasmine.any(Object));
+    expect(ucZoomViewComponent['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, eventImgDummy, jasmine.any(Object));
     expect(component.lensPosition.emit).toHaveBeenCalledOnceWith(dummyPosition);
   });
 
@@ -478,9 +544,9 @@ describe('ucZoomComponent', () => {
 
     const positionFake = {x: 200, y: 200};
 
-    spyOn<any>(ucZoomComponent, 'getCursorPosition').and.returnValue(positionFake);
+    spyOn<any>(ucZoomViewComponent, 'getCursorPosition').and.returnValue(positionFake);
 
-    const result = (ucZoomComponent as any).calculateLensPosition(eventFake, imgFake, lensFake as HTMLDivElement);
+    const result = (ucZoomViewComponent as any).calculateLensPosition(eventFake, imgFake, lensFake as HTMLDivElement);
 
     expect(result).toEqual({x: 150 , y: 150});
   });
@@ -497,9 +563,9 @@ describe('ucZoomComponent', () => {
 
     const positionFake = {x: 950, y: 750};
 
-    spyOn<any>(ucZoomComponent, 'getCursorPosition').and.returnValue(positionFake);
+    spyOn<any>(ucZoomViewComponent, 'getCursorPosition').and.returnValue(positionFake);
 
-    const result = (ucZoomComponent as any).calculateLensPosition(eventFake, imgFake, lensFake as HTMLDivElement);
+    const result = (ucZoomViewComponent as any).calculateLensPosition(eventFake, imgFake, lensFake as HTMLDivElement);
 
     expect(result).toEqual({x: 900 , y: 700});
   });
@@ -516,9 +582,9 @@ describe('ucZoomComponent', () => {
 
     const positionFake = {x: 50, y: 50};
 
-    spyOn<any>(ucZoomComponent, 'getCursorPosition').and.returnValue(positionFake);
+    spyOn<any>(ucZoomViewComponent, 'getCursorPosition').and.returnValue(positionFake);
 
-    const result = (ucZoomComponent as any).calculateLensPosition(eventFake, imgFake, lensFake as HTMLDivElement);
+    const result = (ucZoomViewComponent as any).calculateLensPosition(eventFake, imgFake, lensFake as HTMLDivElement);
 
     expect(result).toEqual({x: 0 , y: 0});
   });
@@ -537,7 +603,7 @@ describe('ucZoomComponent', () => {
 
     spyOn(imgFake, 'getBoundingClientRect').and.returnValue(new DOMRect(50, 40, imageWidth, imageHeight));
 
-    const result = (ucZoomComponent as any).getCursorPosition(eventFake, imgFake);
+    const result = (ucZoomViewComponent as any).getCursorPosition(eventFake, imgFake);
 
     expect(result).toEqual({x: 50 , y: 60});
   });
@@ -583,7 +649,7 @@ describe('ucZoomComponent', () => {
       naturalHeight: 1000
     } as any;
 
-    const isLoaded = (ucZoomComponent as any).isImageAlreadyLoaded(imgFake);
+    const isLoaded = (ucZoomViewComponent as any).isImageAlreadyLoaded(imgFake);
 
     expect(isLoaded).toBeTrue();
   });
@@ -596,14 +662,14 @@ describe('ucZoomComponent', () => {
       naturalHeight: 0
     } as any;
 
-    const isLoaded = (ucZoomComponent as any).isImageAlreadyLoaded(imgFake);
+    const isLoaded = (ucZoomViewComponent as any).isImageAlreadyLoaded(imgFake);
 
     expect(isLoaded).toBeFalse();
   });
 });
 
 
-describe('ucZoomComponent as a directive in an image html tag', () => {
+describe('ucZoomViewComponent as a directive in an image html tag', () => {
   let component: TestImageComponent;
   let fixture: ComponentFixture<TestImageComponent>;
 
@@ -613,7 +679,7 @@ describe('ucZoomComponent as a directive in an image html tag', () => {
   beforeEach(async () => {
 
     await TestBed.configureTestingModule({
-      declarations: [ TestImageComponent, ucZoomComponent ],
+      declarations: [ TestImageComponent, ucZoomViewComponent ],
       providers: [Renderer2]
     }).compileComponents();
 
@@ -637,7 +703,6 @@ describe('ucZoomComponent as a directive in an image html tag', () => {
     expect(lens).toBeTruthy();
 
     expect(lens.classList.contains('uc-img-zoom-lens')).toBeTrue();
-    expect(lens.id).toBe('uc-zoom-lens');
   });
 
   it('wrapper div should have the original image tag as a child', () => {
@@ -652,12 +717,11 @@ describe('ucZoomComponent as a directive in an image html tag', () => {
     expect(zoomResult).toBeTruthy();
 
     expect(zoomResult.classList.contains('uc-img-zoom-result')).toBeTrue();
-    expect(zoomResult.id).toBe('uc-zoom-result');
   });
 
   it('the lens and the zoom result divs should be hidden at its creation', () => {
-    const zoomResultDiv = wrapperDiv.querySelector('#uc-zoom-result');
-    const lensDiv = wrapperDiv.querySelector('#uc-zoom-lens');
+    const zoomResultDiv = wrapperDiv.querySelector('div.uc-img-zoom-result');
+    const lensDiv = wrapperDiv.querySelector('div.uc-img-zoom-lens');
 
     expect(zoomResultDiv && zoomResultDiv.classList.contains('uc-hide-lens')).toBeTrue();
     expect(lensDiv && lensDiv.classList.contains('uc-hide-lens')).toBeTrue();
@@ -671,12 +735,12 @@ describe('ucZoomComponent as a directive in an image html tag', () => {
 
     setTimeout(() => {
       fixture.detectChanges();
-      const zoomResultDiv = fixture.nativeElement.querySelector('#uc-zoom-result');
-      const lensDiv = fixture.nativeElement.querySelector('#uc-zoom-lens');
+      const zoomResultDiv = wrapperDiv.querySelector('div.uc-img-zoom-result');
+      const lensDiv = wrapperDiv.querySelector('div.uc-img-zoom-lens');
 
       expect(zoomResultDiv && !zoomResultDiv.classList.contains('uc-hide-lens')).toBeTrue();
       expect(lensDiv && !lensDiv.classList.contains('uc-hide-lens')).toBeTrue();
-    }, 200);
+    }, 300);
 
   });
 
@@ -694,18 +758,18 @@ describe('ucZoomComponent as a directive in an image html tag', () => {
     setTimeout(() => {
       fixture.detectChanges();
 
-      const zoomResultDiv = fixture.nativeElement.querySelector('#uc-zoom-result');
-      const lensDiv = fixture.nativeElement.querySelector('#uc-zoom-lens');
+      const zoomResultDiv = wrapperDiv.querySelector('div.uc-img-zoom-result');
+      const lensDiv = wrapperDiv.querySelector('div.uc-img-zoom-lens');
 
       expect(lensDiv.style.left).toBeTruthy();
       expect(zoomResultDiv.style.backgroundPosition).toBeTruthy();
-    }, 200);
+    }, 300);
   });
 
   it('should detect mouseleave event and hide the lens and zoom result accordingly', () => {
 
-    const zoomResultDiv = wrapperDiv.querySelector('#uc-zoom-result');
-    const lensDiv = wrapperDiv.querySelector('#uc-zoom-lens');
+    const zoomResultDiv = wrapperDiv.querySelector('div.uc-img-zoom-result');
+    const lensDiv = wrapperDiv.querySelector('div.uc-img-zoom-lens');
 
     zoomResultDiv.classList.remove('uc-hide-lens');
     lensDiv.classList.remove('uc-hide-lens');
@@ -719,7 +783,7 @@ describe('ucZoomComponent as a directive in an image html tag', () => {
 
       expect(zoomResultDiv && zoomResultDiv.classList.contains('uc-hide-lens')).toBeTrue();
       expect(lensDiv && lensDiv.classList.contains('uc-hide-lens')).toBeTrue();
-    }, 200);
+    }, 300);
   });
 
 });
