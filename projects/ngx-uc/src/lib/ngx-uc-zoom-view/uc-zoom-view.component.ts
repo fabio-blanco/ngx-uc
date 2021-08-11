@@ -1,19 +1,23 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, Renderer2} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, Renderer2} from '@angular/core';
+import {EnforcedUcZoomViewConfig, UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig} from "./uc-zoom-view-config";
 
-export interface Coordinates {
+export interface UcCoordinates {
   x: number,
   y: number
 }
 
 @Component({
   selector: 'img[uc-zoom-view]',
-  exportAs: 'ucNgZoom',
+  exportAs: 'ucNgZoomView',
   template: '<ng-content></ng-content>'
 })
-export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
+export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @Output()
-  lensPosition = new EventEmitter<Coordinates>();
+  lensPosition = new EventEmitter<UcCoordinates>();
+
+  @Input('uc-zoom-view-config')
+  ucZoomViewConfig?: UcZoomViewConfig;
 
   private cx: number = 0;
   private cy: number = 0;
@@ -23,6 +27,8 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   private lens!: HTMLDivElement;
   private isInitialized = false;
   private isImageLoaded = false;
+
+  private config!: EnforcedUcZoomViewConfig;
 
   private unListeners: (() => void)[] = [];
 
@@ -34,6 +40,7 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
               private renderer: Renderer2) { }
 
   ngOnInit(): void {
+    this.config = this.mergeConfig(UC_ZOOM_VIEW_DEFAULT_CONFIG, this.ucZoomViewConfig);
   }
 
   ngOnDestroy(): void {
@@ -49,7 +56,7 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.attachListenersToImage(element as HTMLImageElement);
     this.initializeLensAndResult(element as HTMLImageElement);
     this.isInitialized = true;
-    this.isImageLoaded = ucZoomViewComponent.isImageAlreadyLoaded(element as HTMLImageElement);
+    this.isImageLoaded = UcZoomViewComponent.isImageAlreadyLoaded(element as HTMLImageElement);
   }
 
   unWrapImage(srcImg:HTMLImageElement): void {
@@ -64,7 +71,7 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   wrapImage(srcImg:HTMLImageElement):HTMLDivElement {
     const parent = this.renderer.parentNode(srcImg);
     const wrapperDiv = this.renderer.createElement('div');
-    this.renderer.addClass(wrapperDiv, 'uc-img-container');
+    this.renderer.addClass(wrapperDiv, this.config.cssClasses.imageContainer);
     this.renderer.insertBefore(parent, wrapperDiv, srcImg);
     this.renderer.removeChild(parent, srcImg, true);
     this.renderer.appendChild(wrapperDiv, srcImg);
@@ -89,8 +96,21 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.initializeLens(srcImg);
   }
 
+  private mergeConfig(defaultConfig: EnforcedUcZoomViewConfig, inputConfig: UcZoomViewConfig | undefined): EnforcedUcZoomViewConfig {
+    const merged: EnforcedUcZoomViewConfig = {
+      cssClasses: {
+        imageContainer: inputConfig?.cssClasses?.imageContainer ? inputConfig.cssClasses.imageContainer : defaultConfig.cssClasses.imageContainer,
+        lens: inputConfig?.cssClasses?.lens ? inputConfig.cssClasses.lens : defaultConfig.cssClasses.lens,
+        zoomView: inputConfig?.cssClasses?.zoomView ? inputConfig.cssClasses.zoomView : defaultConfig.cssClasses.zoomView,
+        hideLens: inputConfig?.cssClasses?.hideLens ? inputConfig.cssClasses.hideLens : defaultConfig.cssClasses.hideLens
+      }
+    };
+
+    return merged;
+  }
+
   private initializeLens(srcImg: HTMLImageElement) {
-    this.renderer.addClass(this.lens, 'uc-hide-lens');
+    this.renderer.addClass(this.lens, this.config.cssClasses.hideLens);
     this.renderer.listen(this.lens, 'mousemove', event => {this.onImgMouseMove(event, srcImg)});
     this.renderer.listen(this.lens, 'mouseleave', event => {this.onImgMouseLeave(event)});
   }
@@ -101,7 +121,7 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if(this.isImageLoaded) {
       this.initializeZoomDivBackgroundSize(srcImg);
     }
-    this.renderer.addClass(this.zoomResult, 'uc-hide-lens');
+    this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
   }
 
   private initializeZoomDivBackgroundSize(srcImg: HTMLImageElement) {
@@ -118,14 +138,14 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   creatLens(srcImg:HTMLImageElement):HTMLDivElement {
     const lens: HTMLDivElement = this.renderer.createElement('div');
-    this.renderer.addClass(lens, 'uc-img-zoom-lens');
+    this.renderer.addClass(lens, this.config.cssClasses.lens);
     this.renderer.insertBefore(this.renderer.parentNode(srcImg), lens, srcImg);
     return lens;
   }
 
   createZoomResultContainer(srcImg:HTMLImageElement): HTMLDivElement {
     const zoomResult: HTMLDivElement = this.renderer.createElement('div');
-    this.renderer.addClass(zoomResult, 'uc-img-zoom-result');
+    this.renderer.addClass(zoomResult, this.config.cssClasses.zoomView);
     this.renderer.setStyle(zoomResult, 'left', `${srcImg.width}px`);
     this.renderer.appendChild(this.renderer.parentNode(srcImg), zoomResult);
 
@@ -139,7 +159,7 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const srcImg = imgElement? imgElement : event.target as HTMLImageElement;
 
-    const lensPos = ucZoomViewComponent.calculateLensPosition(event, srcImg, this.lens);
+    const lensPos = UcZoomViewComponent.calculateLensPosition(event, srcImg, this.lens);
     this.lensPosition.emit(lensPos);
 
     /* Set the position of the lens: */
@@ -157,16 +177,16 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (!this.isReady) return;
 
-    this.renderer.removeClass(this.zoomResult, 'uc-hide-lens');
-    this.renderer.removeClass(this.lens, 'uc-hide-lens');
+    this.renderer.removeClass(this.zoomResult, this.config.cssClasses.hideLens);
+    this.renderer.removeClass(this.lens, this.config.cssClasses.hideLens);
   }
 
   onImgMouseLeave(event: MouseEvent): void {
 
     if (!this.isReady) return;
 
-    this.renderer.addClass(this.zoomResult, 'uc-hide-lens');
-    this.renderer.addClass(this.lens, 'uc-hide-lens');
+    this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
+    this.renderer.addClass(this.lens, this.config.cssClasses.hideLens);
   }
 
   onImageLoaded(srcImg:HTMLImageElement) {
@@ -175,7 +195,7 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onImageLoadFailed() {
-    console.error('uc-zoom: It was not possible to load the image!');
+    console.error('uc-zoom-view: It was not possible to load the image!');
   }
 
   /**
@@ -194,9 +214,9 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.elRef.nativeElement;
   }
 
-  private static calculateLensPosition(event: MouseEvent, srcImg: HTMLImageElement, lens: HTMLDivElement): Coordinates {
+  private static calculateLensPosition(event: MouseEvent, srcImg: HTMLImageElement, lens: HTMLDivElement): UcCoordinates {
     /* Get the cursor's x and y positions: */
-    const pos = ucZoomViewComponent.getCursorPosition(event, srcImg);
+    const pos = UcZoomViewComponent.getCursorPosition(event, srcImg);
 
     /* Calculate the position of the lens: */
     let x = pos.x - (lens.offsetWidth / 2);
@@ -219,15 +239,10 @@ export class ucZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return {x: x, y: y};
   }
 
-  private static getCursorPosition(event: MouseEvent, srcImg: HTMLImageElement): Coordinates {
+  private static getCursorPosition(event: MouseEvent, srcImg: HTMLImageElement): UcCoordinates {
 
     const rect = srcImg.getBoundingClientRect();
-    /* Calculate the cursor's x and y coordinates, relative to the image: */
-    /*let x = event.pageX - rect.left;
-    let y = event.pageY - rect.top;
-    /!* Consider any page scrolling: *!/
-    x = x - window.pageXOffset;
-    y = y - window.pageYOffset;*/
+
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     return {x : x, y : y};

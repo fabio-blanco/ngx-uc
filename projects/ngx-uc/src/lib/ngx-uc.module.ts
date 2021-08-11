@@ -1,16 +1,16 @@
 import { NgModule } from '@angular/core';
-import { ucZoomViewComponent } from './ngx-uc/uc-zoom-view.component';
+import { UcZoomViewComponent } from './ngx-uc-zoom-view/uc-zoom-view.component';
 
 
 
 @NgModule({
   declarations: [
-    ucZoomViewComponent
+    UcZoomViewComponent
   ],
   imports: [
   ],
   exports: [
-    ucZoomViewComponent
+    UcZoomViewComponent
   ]
 })
 export class NgxUcModule { }

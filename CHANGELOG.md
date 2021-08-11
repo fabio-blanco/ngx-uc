@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Unit tests
+- Customizable options to component uc-zoom-view by setting the property uc-zoom-view-config
+- Configuration to use customized css class names in the component uc-zoom-view allowing to use 
+differently styled instances of the component in the same page at the same time
 
 ### Fixed
  
@@ -30,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - uc-zoom component renamed to uc-zoom-view to be more descriptive and allow the creation of a 
 future, and more specialized, new uc-zoom component.
 - Removed id from native elements created by the component.
+- Changed the prefix from the class name ucZoomViewComponent to UcZoomViewComponent
 
 ## [Initial Alpha Releases]
 
