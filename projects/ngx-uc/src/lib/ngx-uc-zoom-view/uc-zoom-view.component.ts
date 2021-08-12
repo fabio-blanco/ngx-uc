@@ -101,7 +101,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.calculateRatioBetweenResultAndLens();
 
-    this.initializeZoomDiv(srcImg);
+    if(!this.isSetExternalViewWithResetOn()) {
+      this.initializeZoomDiv(srcImg);
+    }
     this.initializeLens(srcImg);
   }
 
@@ -120,7 +122,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
         lens: inputConfig?.cssClasses?.lens ? inputConfig.cssClasses.lens : defaultConfig.cssClasses.lens,
         zoomView: inputConfig?.cssClasses?.zoomView ? inputConfig.cssClasses.zoomView : defaultConfig.cssClasses.zoomView,
         hideLens: inputConfig?.cssClasses?.hideLens ? inputConfig.cssClasses.hideLens : defaultConfig.cssClasses.hideLens
-      }
+      },
+      resetExtViewOnMouseLeave: (typeof(inputConfig?.resetExtViewOnMouseLeave) !== 'undefined') ? inputConfig.resetExtViewOnMouseLeave :
+        defaultConfig.resetExtViewOnMouseLeave
     };
 
     return merged;
@@ -196,6 +200,10 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (!this.isReady) return;
 
+    if (this.isSetExternalViewWithResetOn()) {
+      this.initializeZoomDiv(this.getNativeElement() as HTMLImageElement);
+    }
+
     if(!this.ucZoomResultView) {
       this.renderer.removeClass(this.zoomResult, this.config.cssClasses.hideLens);
     }
@@ -205,6 +213,10 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   onImgMouseLeave(event: MouseEvent): void {
 
     if (!this.isReady) return;
+
+    if (this.isSetExternalViewWithResetOn()) {
+      this.resetZoomView();
+    }
 
     if(!this.ucZoomResultView) {
       this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
@@ -219,6 +231,16 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onImageLoadFailed() {
     console.error('uc-zoom-view: It was not possible to load the image!');
+  }
+
+  private resetZoomView(): void {
+    this.renderer.removeStyle(this.zoomResult, 'background-image');
+    this.renderer.removeStyle(this.zoomResult, 'background-size');
+    this.renderer.removeStyle(this.zoomResult, 'background-position');
+  }
+
+  private isSetExternalViewWithResetOn(): boolean {
+    return this.ucZoomResultView && this.config.resetExtViewOnMouseLeave;
   }
 
   private static isElementA(element: any, tagName: string): boolean {
