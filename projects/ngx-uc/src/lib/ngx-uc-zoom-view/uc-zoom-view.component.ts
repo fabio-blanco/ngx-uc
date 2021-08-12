@@ -19,6 +19,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input('uc-zoom-view-config')
   ucZoomViewConfig?: UcZoomViewConfig;
 
+  @Input('uc-z-view')
+  ucZoomResultView: any;
+
   private cx: number = 0;
   private cy: number = 0;
 
@@ -40,12 +43,12 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
               private renderer: Renderer2) { }
 
   ngOnInit(): void {
-    this.config = this.mergeConfig(UC_ZOOM_VIEW_DEFAULT_CONFIG, this.ucZoomViewConfig);
+    this.config = UcZoomViewComponent.mergeConfig(UC_ZOOM_VIEW_DEFAULT_CONFIG, this.ucZoomViewConfig);
   }
 
   ngOnDestroy(): void {
     this.unListeners.forEach(unl => unl());
-    if(this.elRef && this.elRef.nativeElement instanceof HTMLImageElement) {
+    if(this.elRef && UcZoomViewComponent.isElementA(this.elRef.nativeElement, 'img')) {
       this.unWrapImage(this.elRef.nativeElement);
     }
   }
@@ -62,7 +65,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   unWrapImage(srcImg:HTMLImageElement): void {
     this.renderer.removeChild(this.outerDiv, srcImg);
     this.renderer.removeChild(this.outerDiv, this.lens);
-    this.renderer.removeChild(this.outerDiv, this.zoomResult);
+    if (!this.ucZoomResultView) {
+      this.renderer.removeChild(this.outerDiv, this.zoomResult);
+    }
     const parent = this.renderer.parentNode(this.outerDiv);
     this.renderer.insertBefore(parent, srcImg, this.outerDiv, true);
     this.renderer.removeChild(parent, this.outerDiv);
@@ -87,7 +92,11 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   initializeLensAndResult(srcImg:HTMLImageElement): void {
-    this.zoomResult = this.createZoomResultContainer(srcImg);
+    if(this.ucZoomResultView) {
+      this.setExternalZoomResultContainer();
+    } else {
+      this.zoomResult = this.createZoomResultContainer(srcImg);
+    }
     this.lens = this.creatLens(srcImg);
 
     this.calculateRatioBetweenResultAndLens();
@@ -96,7 +105,15 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.initializeLens(srcImg);
   }
 
-  private mergeConfig(defaultConfig: EnforcedUcZoomViewConfig, inputConfig: UcZoomViewConfig | undefined): EnforcedUcZoomViewConfig {
+  setExternalZoomResultContainer(): void {
+    if (UcZoomViewComponent.isElementA(this.ucZoomResultView, 'div')) {
+      this.zoomResult = this.ucZoomResultView;
+    } else {
+      throw new TypeError('The view object is not a div. A custom zoom view should be a div.')
+    }
+  }
+
+  private static mergeConfig(defaultConfig: EnforcedUcZoomViewConfig, inputConfig: UcZoomViewConfig | undefined): EnforcedUcZoomViewConfig {
     const merged: EnforcedUcZoomViewConfig = {
       cssClasses: {
         imageContainer: inputConfig?.cssClasses?.imageContainer ? inputConfig.cssClasses.imageContainer : defaultConfig.cssClasses.imageContainer,
@@ -121,7 +138,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     if(this.isImageLoaded) {
       this.initializeZoomDivBackgroundSize(srcImg);
     }
-    this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
+    if(!this.ucZoomResultView) {
+      this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
+    }
   }
 
   private initializeZoomDivBackgroundSize(srcImg: HTMLImageElement) {
@@ -177,7 +196,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (!this.isReady) return;
 
-    this.renderer.removeClass(this.zoomResult, this.config.cssClasses.hideLens);
+    if(!this.ucZoomResultView) {
+      this.renderer.removeClass(this.zoomResult, this.config.cssClasses.hideLens);
+    }
     this.renderer.removeClass(this.lens, this.config.cssClasses.hideLens);
   }
 
@@ -185,7 +206,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (!this.isReady) return;
 
-    this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
+    if(!this.ucZoomResultView) {
+      this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
+    }
     this.renderer.addClass(this.lens, this.config.cssClasses.hideLens);
   }
 
@@ -196,6 +219,10 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onImageLoadFailed() {
     console.error('uc-zoom-view: It was not possible to load the image!');
+  }
+
+  private static isElementA(element: any, tagName: string): boolean {
+    return element.tagName && element.tagName.toLowerCase() === tagName;
   }
 
   /**

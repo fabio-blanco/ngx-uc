@@ -60,6 +60,24 @@ class TestCustomizedOptionsImageComponent {
   };
 }
 
+@Component({
+  template: `
+<img id="theImage2" src="https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+     [style]="{'width': '500px'}" uc-zoom-view [uc-z-view]="zoomView">
+<div #zoomView class="custom-zoom-view"></div>
+  `,
+  styles: [`
+    .custom-zoom-view {
+      height: 500px;
+      width: 500px;
+    }
+  `]
+})
+class TestImageExternalZoomViewComponent {
+  @ViewChild(UcZoomViewComponent)
+  ucZoomViewComponent!: UcZoomViewComponent;
+}
+
 
 describe('UcZoomViewComponent', () => {
   let component: UcZoomViewComponent;
@@ -87,7 +105,7 @@ describe('UcZoomViewComponent', () => {
   it('.mergeConfig should properly merge with no provided config', () => {
     const config = UC_ZOOM_VIEW_DEFAULT_CONFIG;
 
-    const result = (component as any).mergeConfig(config, undefined);
+    const result = (UcZoomViewComponent as any).mergeConfig(config, undefined);
 
     expect(result).toBeTruthy();
     expect(result.cssClasses).toBeTruthy();
@@ -102,7 +120,7 @@ describe('UcZoomViewComponent', () => {
   it('.mergeConfig should properly merge with empty config', () => {
     const config = UC_ZOOM_VIEW_DEFAULT_CONFIG;
 
-    const result = (component as any).mergeConfig(config, {});
+    const result = (UcZoomViewComponent as any).mergeConfig(config, {});
 
     expect(result).toBeTruthy();
     expect(result.cssClasses).toBeTruthy();
@@ -117,7 +135,7 @@ describe('UcZoomViewComponent', () => {
 
     const hideLens = 'dont-hide-nothing-i-am-crazy';
 
-    const result = (component as any).mergeConfig(config, {cssClasses: {hideLens: hideLens}});
+    const result = (UcZoomViewComponent as any).mergeConfig(config, {cssClasses: {hideLens: hideLens}});
 
     expect(result).toBeTruthy();
     expect(result.cssClasses).toBeTruthy();
@@ -139,7 +157,7 @@ describe('UcZoomViewComponent', () => {
       }
     };
 
-    const result = (component as any).mergeConfig(config, fullyProvidedConfig);
+    const result = (UcZoomViewComponent as any).mergeConfig(config, fullyProvidedConfig);
 
     expect(result).toBeTruthy();
     expect(result.cssClasses).toBeTruthy();
@@ -218,6 +236,31 @@ describe('UcZoomViewComponent', () => {
     expect(renderer.parentNode).toHaveBeenCalledWith(component['outerDiv']);
     expect(renderer.insertBefore).toHaveBeenCalledWith(parent, img, component['outerDiv'], true);
     expect(renderer.removeChild).toHaveBeenCalledWith(parent, component['outerDiv']);
+
+  });
+
+  it('.unWrapImage should not touch the external zoom view', () => {
+    const img: HTMLImageElement = new Image(10, 10);
+
+    const renderer = fixture.debugElement.injector.get(Renderer2);
+
+    spyOn(renderer, 'removeChild');
+
+    const parent = document.body;
+    spyOn(renderer, 'parentNode').and.returnValue(parent);
+
+    spyOn(renderer, 'insertBefore');
+
+    component['outerDiv'] = document.createElement('div');
+    component['outerDiv'].id = 'outerDiv';
+    component['lens'] = document.createElement('div');
+    component['zoomResult'] = document.createElement('div');
+    component['zoomResult'].id = 'zoomResult';
+    component.ucZoomResultView = {};
+
+    component.unWrapImage(img);
+
+    expect(renderer.removeChild).not.toHaveBeenCalledWith(component['outerDiv'], component['zoomResult']);
 
   });
 
@@ -346,6 +389,29 @@ describe('UcZoomViewComponent', () => {
     expect(component['initializeLens']).toHaveBeenCalledOnceWith(img);
   });
 
+  it('.initializeLensAndResult should properly initialize a custom zoom result', () => {
+    const img: HTMLImageElement = new Image(10, 10);
+
+    const zoomResultDiv = document.createElement('div');
+    const customZoomResultDiv = document.createElement('div');
+    const lensDiv = document.createElement('div');
+
+    component.ucZoomResultView = customZoomResultDiv;
+    spyOn(component, 'setExternalZoomResultContainer').and.callThrough();
+    spyOn(component, 'createZoomResultContainer').and.returnValue(zoomResultDiv);
+    spyOn(component, 'creatLens').and.returnValue(lensDiv);
+
+    spyOn<any>(component, 'calculateRatioBetweenResultAndLens');
+    spyOn<any>(component, 'initializeZoomDiv');
+    spyOn<any>(component, 'initializeLens');
+
+    component.initializeLensAndResult(img);
+
+    expect(component['zoomResult']).toBe(customZoomResultDiv);
+    expect(component.setExternalZoomResultContainer).toHaveBeenCalled();
+    expect(component['createZoomResultContainer']).not.toHaveBeenCalled();
+  });
+
   it('.initializeLens should hide and attach mousemove and mouseenter listeners', () => {
     const img: HTMLImageElement = new Image(10, 10);
 
@@ -383,6 +449,26 @@ describe('UcZoomViewComponent', () => {
     expect(component['zoomResult'].style.backgroundImage).toBe(`url("${fakeSrc}")`);
     expect(component['initializeZoomDivBackgroundSize']).toHaveBeenCalledOnceWith(imgStub as HTMLImageElement);
     expect(component['zoomResult'].classList.contains('uc-hide-lens'));
+  });
+
+  it('.initializeZoomDiv should not add class on zoomResult if external view is set', () => {
+
+    const imgStub: Partial<HTMLImageElement> = {
+      src: 'anyimage.jpeg',
+      width: 10,
+      height: 10
+    };
+
+    const renderer = fixture.debugElement.injector.get(Renderer2);
+
+    spyOn(renderer, 'setStyle');
+    spyOn(renderer, 'addClass');
+
+    component.ucZoomResultView = {};
+
+    (component as any).initializeZoomDiv(imgStub as HTMLImageElement);
+
+    expect(renderer.addClass).not.toHaveBeenCalled();
   });
 
   it('.initializeZoomDiv should not initialize zoom background if image is not yet loaded', () => {
@@ -609,6 +695,21 @@ describe('UcZoomViewComponent', () => {
     expect(renderer.removeClass).toHaveBeenCalledWith(component['zoomResult'], 'uc-hide-lens');
   });
 
+  it('.onImgMouseEnter should not try to remove a class from the external zoom view', () => {
+    const eventFake = new MouseEvent('mousemove');
+
+    component['zoomResult'] = document.createElement('div');
+    component.ucZoomResultView = {};
+
+    const renderer = fixture.debugElement.injector.get(Renderer2);
+
+    spyOn(renderer, 'removeClass');
+
+    component.onImgMouseEnter(eventFake);
+
+    expect(renderer.removeClass).not.toHaveBeenCalledWith(component['zoomResult'], jasmine.any(Object));
+  });
+
   it('.onImgMouseLeave should do nothing if not ready', () => {
     const eventFake = new MouseEvent('mousemove');
 
@@ -640,6 +741,21 @@ describe('UcZoomViewComponent', () => {
 
     expect(renderer.addClass).toHaveBeenCalledWith(component['lens'], 'uc-hide-lens');
     expect(renderer.addClass).toHaveBeenCalledWith(component['zoomResult'], 'uc-hide-lens');
+  });
+
+  it('.onImgMouseLeave should not try to add a class to the external zoom view', () => {
+    const eventFake = new MouseEvent('mousemove');
+
+    component['zoomResult'] = document.createElement('div');
+    component.ucZoomResultView = {};
+
+    const renderer = fixture.debugElement.injector.get(Renderer2);
+
+    spyOn(renderer, 'addClass');
+
+    component.onImgMouseEnter(eventFake);
+
+    expect(renderer.addClass).not.toHaveBeenCalledWith(component['zoomResult'], jasmine.any(Object));
   });
 
   it('.calculateLensPosition should calculate a valid position', () => {
@@ -925,9 +1041,9 @@ describe('UcZoomViewComponent with custom options', () => {
   beforeEach(async () => {
 
     await TestBed.configureTestingModule({
-                                           declarations: [ TestCustomizedOptionsImageComponent, UcZoomViewComponent ],
-                                           providers: [Renderer2]
-                                         }).compileComponents();
+      declarations: [ TestCustomizedOptionsImageComponent, UcZoomViewComponent ],
+      providers: [Renderer2]
+    }).compileComponents();
 
   });
 
@@ -943,5 +1059,65 @@ describe('UcZoomViewComponent with custom options', () => {
     expect(wrapperDiv.classList.contains('custom-img-container')).toBeTrue();
     expect(wrapperDiv.querySelector('div.custom-zoom-lens')).toBeTruthy();
     expect(wrapperDiv.querySelector('div.custom-zoom-result')).toBeTruthy();
+  });
+});
+
+describe('UcZoomViewComponent with custom view', () => {
+  let component: TestImageExternalZoomViewComponent;
+  let fixture: ComponentFixture<TestImageExternalZoomViewComponent>;
+
+  let wrapperDiv: any;
+  let externalZoomView: any;
+  let image: HTMLImageElement;
+
+  beforeEach(async () => {
+
+    await TestBed.configureTestingModule({
+      declarations: [ TestImageExternalZoomViewComponent, UcZoomViewComponent ],
+      providers: [Renderer2]
+    }).compileComponents();
+
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(TestImageExternalZoomViewComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    wrapperDiv = fixture.nativeElement.querySelector('div.uc-img-container');
+    externalZoomView = fixture.nativeElement.querySelector('div.custom-zoom-view');
+    image = fixture.nativeElement.querySelector('#theImage2');
+  });
+
+  it('should use the custom view and not create the default one', () => {
+    expect(wrapperDiv).toBeTruthy();
+    expect(wrapperDiv.querySelector('div.uc-img-zoom-lens')).toBeTruthy();
+    expect(wrapperDiv.querySelector('div.uc-img-zoom-result')).toBeFalsy();
+    expect(wrapperDiv.querySelector('div.custom-zoom-view')).toBeFalsy();
+    expect(externalZoomView).toBeTruthy();
+    expect(externalZoomView.style.backgroundImage).toBeTruthy();
+    expect(externalZoomView.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeFalsy();
+  });
+
+  it('should detect mouseover event and update the lens position and the zoom visualization position', () => {
+
+    const imageRect = image.getBoundingClientRect();
+
+    const eventMouseOver = new MouseEvent('mouseover', {
+      clientX: imageRect.left + 20,
+      clientY: imageRect.top - 20
+    });
+
+    image.dispatchEvent(eventMouseOver);
+
+    setTimeout(() => {
+      fixture.detectChanges();
+
+      const zoomResultDiv = wrapperDiv.querySelector('div.custom-zoom-view');
+      const lensDiv = wrapperDiv.querySelector('div.uc-img-zoom-lens');
+
+      expect(lensDiv.style.left).toBeTruthy();
+      expect(zoomResultDiv.style.backgroundPosition).toBeTruthy();
+    }, 300);
   });
 });
