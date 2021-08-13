@@ -48,7 +48,7 @@ progress of the work.
    export class AppModule { }
    ```
    
-4. In a template, add the `uc-zoom` directive to an image tag:
+4. In a template, add the `uc-zoom-view` directive to an image tag:
    ```html
    <img src="your-image.jpg" uc-zoom-view >
    ```
