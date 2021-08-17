@@ -40,6 +40,8 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private unListeners: (() => void)[] = [];
 
+  private srcMutationObserver!: MutationObserver;
+
   get isReady() {
     return this.isInitialized && this.isImageLoaded;
   }
@@ -49,10 +51,22 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.config = UcZoomViewComponent.mergeConfig(UC_ZOOM_VIEW_DEFAULT_CONFIG, this.ucZoomViewConfig);
+
+    const that = this;
+    this.srcMutationObserver = new MutationObserver((changes) => {
+      changes.forEach(change => {
+        if(change.attributeName === 'src') {
+          that.onImageSourceChange();
+        }
+      });
+    });
   }
 
   ngOnDestroy(): void {
     this.unListeners.forEach(unl => unl());
+    if (this.srcMutationObserver) {
+      this.srcMutationObserver.disconnect();
+    }
     if(this.elRef && UcZoomViewComponent.isElementA(this.elRef.nativeElement, 'img')) {
       this.unWrapImage(this.elRef.nativeElement);
     }
@@ -94,6 +108,7 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.unListeners.push(this.renderer.listen(srcImg, 'mouseenter', event => {this.onImgMouseEnter(event)}));
     this.unListeners.push(this.renderer.listen(srcImg, 'load', () => this.onImageLoaded(srcImg)));
     this.unListeners.push(this.renderer.listen(srcImg, 'error', ()=> this.onImageLoadFailed() ));
+    this.srcMutationObserver.observe(srcImg, {attributes: true});
   }
 
   initializeLensAndResult(srcImg:HTMLImageElement): void {
@@ -137,15 +152,14 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     return merged;
   }
 
-  private initializeLens(srcImg: HTMLImageElement) {
+  private initializeLens(srcImg: HTMLImageElement): void {
     this.renderer.addClass(this.lens, this.config.cssClasses.hideLens);
     this.renderer.listen(this.lens, 'mousemove', event => {this.onImgMouseMove(event, srcImg)});
     this.renderer.listen(this.lens, 'mouseleave', event => {this.onImgMouseLeave(event)});
   }
 
-  private initializeZoomDiv(srcImg: HTMLImageElement) {
-    const backGroundImage = `url("${srcImg.src}")`;
-    this.renderer.setStyle(this.zoomResult, 'background-image', backGroundImage);
+  private initializeZoomDiv(srcImg: HTMLImageElement): void {
+    this.setZoomViewResultImage(srcImg);
     if(this.isImageLoaded) {
       this.initializeZoomDivBackgroundSize(srcImg);
     }
@@ -154,13 +168,18 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private initializeZoomDivBackgroundSize(srcImg: HTMLImageElement) {
+  private setZoomViewResultImage(srcImg: HTMLImageElement): void {
+    const backGroundImage = `url("${srcImg.src}")`;
+    this.renderer.setStyle(this.zoomResult, 'background-image', backGroundImage);
+  }
+
+  private initializeZoomDivBackgroundSize(srcImg: HTMLImageElement): void {
     const bw = srcImg.width * this.cx;
     const bh = srcImg.height * this.cy;
     this.renderer.setStyle(this.zoomResult, 'background-size', `${bw}px ${bh}px`);
   }
 
-  private calculateRatioBetweenResultAndLens() {
+  private calculateRatioBetweenResultAndLens(): void {
     /* Calculate the ratio between result DIV and lens: */
     this.cx = this.zoomResult.offsetWidth / this.lens.offsetWidth;
     this.cy = this.zoomResult.offsetHeight / this.lens.offsetHeight;
@@ -238,6 +257,12 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onImageLoadFailed() {
     console.error('uc-zoom-view: It was not possible to load the image!');
+  }
+
+  private onImageSourceChange(): void {
+    const srcImage: HTMLImageElement = this.getNativeElement() as HTMLImageElement;
+    this.setZoomViewResultImage(srcImage);
+    this.initializeZoomDivBackgroundSize(srcImage);
   }
 
   private setViewPosition(zoomResult: HTMLDivElement, srcImg: HTMLImageElement) {

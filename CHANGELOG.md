@@ -24,6 +24,7 @@ position of the view between 4 options: *top*, *right (default)*, *left*, *botto
 distance between the image element and the zoom view.
 - Added a z-index to the zoom view css class in the default css template to allow it to 
 always be on top.
+- Support to change detect changes on the src of the image on the `uc-zoom-view` component.
 
 ### Removed
 

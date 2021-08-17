@@ -7,13 +7,15 @@ import {UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewPosition} from 
 
 @Component({
   template: `
-<img id="theImage" src="https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+<img id="theImage" src="{{imgSrc}}"
      [style]="{'width': '500px'}" uc-zoom-view>
   `
 })
 class TestImageComponent {
   @ViewChild(UcZoomViewComponent)
   ucZoomViewComponent!: UcZoomViewComponent;
+
+  imgSrc = 'https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260';
 }
 
 @Component({
@@ -298,6 +300,7 @@ describe('UcZoomViewComponent', () => {
     const img: HTMLImageElement = new Image(10, 10);
 
     spyOn(component, 'unWrapImage');
+    spyOn(component['srcMutationObserver'], 'disconnect').and.callThrough();
 
     const elRef = new ElementRef(img);
 
@@ -316,13 +319,14 @@ describe('UcZoomViewComponent', () => {
 
     expect(component.unWrapImage).toHaveBeenCalledWith(elRef.nativeElement);
     expect(isAllUnlistenersCalled).toBeTrue();
+    expect(component['srcMutationObserver'].disconnect).toHaveBeenCalled();
 
     component['elRef'] = originalElRef;
     component['unListeners'] = originalUnListeners;
 
   });
 
-  it('.attachListenersToImage should attach the mousemove and mouseenter listeners to the given image', () => {
+  it('.attachListenersToImage should attach the listeners to the given image', () => {
     const img: HTMLImageElement = new Image(10, 10);
 
     const renderer = fixture.debugElement.injector.get(Renderer2);
@@ -332,6 +336,7 @@ describe('UcZoomViewComponent', () => {
     component['unListeners'] = [];
 
     spyOn(renderer, 'listen').and.returnValue(() => {});
+    spyOn(component['srcMutationObserver'], 'observe');
 
     component.attachListenersToImage(img);
 
@@ -341,6 +346,7 @@ describe('UcZoomViewComponent', () => {
     expect(renderer.listen).toHaveBeenCalledWith(img, 'error',jasmine.any(Function));
     expect(renderer.listen).toHaveBeenCalledTimes(4);
     expect(component['unListeners'].length).toBe(4);
+    expect(component['srcMutationObserver'].observe).toHaveBeenCalled();
 
     component['unListeners'] = originalUnListeners;
   });
@@ -1125,6 +1131,18 @@ describe('UcZoomViewComponent', () => {
 
     expect(isLoaded).toBeFalse();
   });
+
+  it('.onImageSourceChange should update the zoom view image', () => {
+    spyOn<any>(component, 'getNativeElement').and.callThrough();
+    spyOn<any>(component, 'setZoomViewResultImage');
+    spyOn<any>(component, 'initializeZoomDivBackgroundSize');
+
+    (component as any).onImageSourceChange();
+
+    expect(component['getNativeElement']).toHaveBeenCalled();
+    expect(component['setZoomViewResultImage']).toHaveBeenCalled();
+    expect(component['initializeZoomDivBackgroundSize']).toHaveBeenCalled();
+  });
 });
 
 
@@ -1259,6 +1277,23 @@ describe('UcZoomViewComponent as a directive in an image html tag', () => {
 
       expect(zoomResultDiv && zoomResultDiv.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeTrue();
       expect(lensDiv && lensDiv.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeTrue();
+    }, 400);
+  });
+
+  it('should change the zoom view image if the source of the image changes', () => {
+    const newImage = 'https://images.pexels.com/photos/8704649/pexels-photo-8704649.jpeg?cs=srgb&dl=pexels-daria-ponomareva-8704649.jpg&fm=jpg';
+
+    component.imgSrc = newImage;
+    fixture.detectChanges();
+
+    setTimeout(() => {
+
+      const thisWrapperDiv = fixture.nativeElement.querySelector('div.uc-img-container');
+      const zoomResultDiv = thisWrapperDiv.querySelector('div.uc-img-zoom-result');
+      const resultImage = zoomResultDiv.style.backgroundImage;
+
+      expect(resultImage).toContain(newImage);
+
     }, 400);
   });
 
