@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Component, ElementRef, Renderer2, ViewChild, ViewEncapsulation} from "@angular/core";
 
 import {UcZoomViewComponent} from './uc-zoom-view.component';
-import {UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig} from "./uc-zoom-view-config";
+import {UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewPosition} from "./uc-zoom-view-config";
 
 
 @Component({
@@ -136,6 +136,7 @@ describe('UcZoomViewComponent', () => {
     expect(result.cssClasses.zoomView).toBe('uc-img-zoom-result');
     expect(result.cssClasses.hideLens).toBe('uc-hide-lens');
     expect(result.resetExtViewOnMouseLeave).toBeTrue();
+    expect(result.viewPosition).toBe(UcZoomViewPosition.RIGHT);
   });
 
   it('.mergeConfig should properly merge with empty config', () => {
@@ -150,6 +151,7 @@ describe('UcZoomViewComponent', () => {
     expect(result.cssClasses.zoomView).toBe('uc-img-zoom-result');
     expect(result.cssClasses.hideLens).toBe('uc-hide-lens');
     expect(result.resetExtViewOnMouseLeave).toBeTrue();
+    expect(result.viewPosition).toBe(UcZoomViewPosition.RIGHT);
   });
 
   it('.mergeConfig should properly merge with partially provided config', () => {
@@ -166,6 +168,7 @@ describe('UcZoomViewComponent', () => {
     expect(result.cssClasses.zoomView).toBe('uc-img-zoom-result');
     expect(result.cssClasses.hideLens).toBe(hideLens);
     expect(result.resetExtViewOnMouseLeave).toBeTrue();
+    expect(result.viewPosition).toBe(UcZoomViewPosition.RIGHT);
   });
 
   it('.mergeConfig should properly merge with full provided config', () => {
@@ -178,7 +181,8 @@ describe('UcZoomViewComponent', () => {
         zoomView: 'different-zoom-view-class',
         hideLens: 'different-hide-lens-class'
       },
-      resetExtViewOnMouseLeave: false
+      resetExtViewOnMouseLeave: false,
+      viewPosition: UcZoomViewPosition.LEFT
     };
 
     const result = (UcZoomViewComponent as any).mergeConfig(config, fullyProvidedConfig);
@@ -190,6 +194,7 @@ describe('UcZoomViewComponent', () => {
     expect(result.cssClasses.zoomView).toBe(fullyProvidedConfig.cssClasses?.zoomView);
     expect(result.cssClasses.hideLens).toBe(fullyProvidedConfig.cssClasses?.hideLens);
     expect(result.resetExtViewOnMouseLeave).toBeFalse();
+    expect(result.viewPosition).toBe(UcZoomViewPosition.LEFT);
   });
 
   it('.ngAfterViewInit should wrap image, attach listeners, initialize lens and result, and become initialized', () => {
@@ -390,6 +395,92 @@ describe('UcZoomViewComponent', () => {
     expect(renderer.appendChild).toHaveBeenCalledOnceWith(parent, createdZoomResultDiv);
     expect(component['zoomResult']).toBeDefined();
 
+  });
+
+  function prepareViewPositionTest(position: UcZoomViewPosition): { img: HTMLImageElement, zoomResultDiv: HTMLDivElement }{
+    const img: HTMLImageElement = new Image(10, 20);
+
+    const renderer = fixture.debugElement.injector.get(Renderer2);
+
+    const zoomResultDiv = document.createElement('div');
+    spyOn(renderer, 'createElement').and.returnValue(zoomResultDiv);
+
+    const parent = document.body;
+    spyOn(renderer, 'parentNode').and.returnValue(parent);
+
+    component['config'].viewPosition = position;
+
+    return {img: img, zoomResultDiv: zoomResultDiv};
+  }
+
+  function createZoomResultStyle(): void {
+    let style = document.createElement('style');
+    style.innerHTML = `
+    .uc-img-zoom-result {
+      position: absolute;
+      top: 0;
+      margin-left: 10px;
+      border: 1px solid #d4d4d4;
+      /*set the size of the result div:*/
+      width: 700px;
+      height: 700px;
+    }
+    `;
+
+    document.getElementsByTagName('head')[0].appendChild(style);
+  }
+
+  it('.createZoomResultContainer should create properly create a zoom result div positioned bottom', () => {
+    const {img, zoomResultDiv} = prepareViewPositionTest(UcZoomViewPosition.BOTTOM);
+
+    const createdZoomResultDiv = component.createZoomResultContainer(img);
+    expect(createdZoomResultDiv).toBe(zoomResultDiv);
+    const calculatedPositionValue = img.height + component['config'].viewDistance;
+    expect(createdZoomResultDiv.style.top).toBe(`${calculatedPositionValue}px`);
+  });
+
+  it('.createZoomResultContainer should create properly create a zoom result div positioned top', () => {
+    const {img, zoomResultDiv} = prepareViewPositionTest(UcZoomViewPosition.TOP);
+
+    createZoomResultStyle();
+
+    const createdZoomResultDiv = component.createZoomResultContainer(img);
+    expect(createdZoomResultDiv).toBe(zoomResultDiv);
+    const calculatedPositionValue = -(700 + component['config'].viewDistance);
+    expect(createdZoomResultDiv.style.top).toBe(`${calculatedPositionValue}px`);
+  });
+
+  it('.createZoomResultContainer should create properly create a zoom result div positioned left', () => {
+    const {img, zoomResultDiv} = prepareViewPositionTest(UcZoomViewPosition.LEFT);
+
+    createZoomResultStyle();
+
+    const createdZoomResultDiv = component.createZoomResultContainer(img);
+    expect(createdZoomResultDiv).toBe(zoomResultDiv);
+    const calculatedPositionValue = -(700 + component['config'].viewDistance);
+    expect(createdZoomResultDiv.style.left).toBe(`${calculatedPositionValue}px`);
+  });
+
+  it('.createZoomResultContainer should create properly create a zoom result div with a correctly calculated right position', () => {
+    const {img, zoomResultDiv} = prepareViewPositionTest(UcZoomViewPosition.RIGHT);
+
+    component['config'].viewDistance = 10;
+
+    const createdZoomResultDiv = component.createZoomResultContainer(img);
+    expect(createdZoomResultDiv).toBe(zoomResultDiv);
+    const calculatedPositionValue = img.width + component['config'].viewDistance;
+    expect(createdZoomResultDiv.style.left).toBe(`${calculatedPositionValue}px`);
+  });
+
+  it('.createZoomResultContainer should create properly create a zoom result div with a correctly calculated bottom position', () => {
+    const {img, zoomResultDiv} = prepareViewPositionTest(UcZoomViewPosition.BOTTOM);
+
+    component['config'].viewDistance = 10;
+
+    const createdZoomResultDiv = component.createZoomResultContainer(img);
+    expect(createdZoomResultDiv).toBe(zoomResultDiv);
+    const calculatedPositionValue = img.height + component['config'].viewDistance;
+    expect(createdZoomResultDiv.style.top).toBe(`${calculatedPositionValue}px`);
   });
 
   it('.initializeLensAndResult should initialize lens and zoom result', () => {
@@ -1125,7 +1216,7 @@ describe('UcZoomViewComponent as a directive in an image html tag', () => {
 
       expect(zoomResultDiv && !zoomResultDiv.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeTrue();
       expect(lensDiv && !lensDiv.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeTrue();
-    }, 300);
+    }, 400);
 
   });
 
@@ -1148,7 +1239,7 @@ describe('UcZoomViewComponent as a directive in an image html tag', () => {
 
       expect(lensDiv.style.left).toBeTruthy();
       expect(zoomResultDiv.style.backgroundPosition).toBeTruthy();
-    }, 300);
+    }, 400);
   });
 
   it('should detect mouseleave event and hide the lens and zoom result accordingly', () => {
@@ -1168,7 +1259,7 @@ describe('UcZoomViewComponent as a directive in an image html tag', () => {
 
       expect(zoomResultDiv && zoomResultDiv.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeTrue();
       expect(lensDiv && lensDiv.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeTrue();
-    }, 300);
+    }, 400);
   });
 
 });
@@ -1260,7 +1351,7 @@ describe('UcZoomViewComponent with custom view', () => {
 
       expect(lensDiv.style.left).toBeTruthy();
       expect(zoomResultDiv.style.backgroundPosition).toBeTruthy();
-    }, 300);
+    }, 400);
   });
 
   it('should detect mouseenter event and display the lens and update the external zoom result accordingly', () => {
@@ -1277,7 +1368,7 @@ describe('UcZoomViewComponent with custom view', () => {
       expect(lensDiv && !lensDiv.classList.contains(UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens)).toBeTrue();
       expect(zoomResultDiv.style.backgroundImage).toBeTruthy();
       expect(zoomResultDiv.style.backgroundSize).toBeTruthy();
-    }, 300);
+    }, 400);
 
   });
 
@@ -1299,7 +1390,7 @@ describe('UcZoomViewComponent with custom view', () => {
       expect(zoomResultDiv.style.backgroundImage).toBeFalsy();
       expect(zoomResultDiv.style.backgroundSize).toBeFalsy();
       expect(zoomResultDiv.style.backgroundPosition).toBeFalsy();
-    }, 300);
+    }, 400);
   });
 
 });
@@ -1349,6 +1440,6 @@ describe('UcZoomViewComponent with custom options and resetExtViewOnMouseLeave t
       expect(zoomResultDiv.style.backgroundImage).toBeTruthy();
       expect(zoomResultDiv.style.backgroundSize).toBeTruthy();
       expect(zoomResultDiv.style.backgroundPosition).toBeTruthy();
-    }, 300);
+    }, 400);
   });
 });

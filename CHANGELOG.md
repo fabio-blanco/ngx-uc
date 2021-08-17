@@ -16,12 +16,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A new configuration property `viewPosition` to the `uc-zoom-view` component to choose the 
+position of the view between 4 options: *top*, *right (default)*, *left*, *bottom*.
+- A new configuration property `viewDistance` to the `uc-zoom-view` component to choose the 
+distance between the image element and the zoom view.
+- Added a z-index to the zoom view css class in the default css template to allow it to 
+always be on top.
+
+### Removed
+
+- Removed the margin left from the zoom view div css class in the default css template
+in favor of the new `viewDistance` property.
 
 ## [Initial Alpha Releases]
 
 ### [0.2.0] - 2021-08-13
 
-### Added
+#### Added
 
 - Unit tests
 - Customizable options to component `uc-zoom-view` by setting the property `uc-zoom-view-config`
@@ -33,12 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A configuration property `resetExtViewOnMouseLeave` to turn on or off the reset of
   zoom info from the external zoom view `uc-z-view` when configured
 
-### Fixed
+#### Fixed
 
 - Zoom result background not initialized when image is not fully loaded
 - Unwrap the image and unregister the listeners on ngDestroy to avoid memory leaks
 
-### Changed
+#### Changed
 
 - uc-zoom component renamed to uc-zoom-view to be more descriptive and allow the creation of a
   future, and more specialized, new uc-zoom component.

@@ -1,9 +1,14 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, Renderer2} from '@angular/core';
-import {EnforcedUcZoomViewConfig, UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig} from "./uc-zoom-view-config";
+import {EnforcedUcZoomViewConfig, UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewPosition} from "./uc-zoom-view-config";
 
 export interface UcCoordinates {
   x: number,
   y: number
+}
+
+enum ComputedDimensionType {
+  WIDTH =  'width',
+  HEIGHT = 'height'
 }
 
 @Component({
@@ -124,7 +129,9 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
         hideLens: inputConfig?.cssClasses?.hideLens ? inputConfig.cssClasses.hideLens : defaultConfig.cssClasses.hideLens
       },
       resetExtViewOnMouseLeave: (typeof(inputConfig?.resetExtViewOnMouseLeave) !== 'undefined') ? inputConfig.resetExtViewOnMouseLeave :
-        defaultConfig.resetExtViewOnMouseLeave
+        defaultConfig.resetExtViewOnMouseLeave,
+      viewPosition: (typeof(inputConfig?.viewPosition) !== 'undefined') ? inputConfig.viewPosition : defaultConfig.viewPosition,
+      viewDistance: (typeof(inputConfig?.viewDistance) !== 'undefined') ? inputConfig.viewDistance : defaultConfig.viewDistance
     };
 
     return merged;
@@ -169,8 +176,8 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   createZoomResultContainer(srcImg:HTMLImageElement): HTMLDivElement {
     const zoomResult: HTMLDivElement = this.renderer.createElement('div');
     this.renderer.addClass(zoomResult, this.config.cssClasses.zoomView);
-    this.renderer.setStyle(zoomResult, 'left', `${srcImg.width}px`);
     this.renderer.appendChild(this.renderer.parentNode(srcImg), zoomResult);
+    this.setViewPosition(zoomResult, srcImg);
 
     return zoomResult;
   }
@@ -231,6 +238,35 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onImageLoadFailed() {
     console.error('uc-zoom-view: It was not possible to load the image!');
+  }
+
+  private setViewPosition(zoomResult: HTMLDivElement, srcImg: HTMLImageElement) {
+    switch (this.config.viewPosition) {
+      case UcZoomViewPosition.BOTTOM:
+        const bottomPositionValue = srcImg.height + this.config.viewDistance;
+        this.renderer.setStyle(zoomResult, 'top', `${bottomPositionValue}px`);
+        break;
+      case UcZoomViewPosition.TOP:
+        const zoomResultWidth = UcZoomViewComponent.getComputedDivValue(zoomResult, ComputedDimensionType.WIDTH);
+        const topPositionValue = -(zoomResultWidth + this.config.viewDistance);
+        this.renderer.setStyle(zoomResult, 'top', `${topPositionValue}px`);
+        break;
+      case UcZoomViewPosition.LEFT:
+        const zoomResultHeight = UcZoomViewComponent.getComputedDivValue(zoomResult, ComputedDimensionType.HEIGHT);
+        const leftPositionValue = -(zoomResultHeight + this.config.viewDistance);
+        this.renderer.setStyle(zoomResult, 'left', `${leftPositionValue}px`);
+        break;
+      case UcZoomViewPosition.RIGHT:
+      default:
+        const rightPositionValue = srcImg.width + this.config.viewDistance;
+        this.renderer.setStyle(zoomResult, 'left', `${rightPositionValue}px`);
+    }
+  }
+
+  private static getComputedDivValue(div: HTMLDivElement, type: ComputedDimensionType): number {
+    const computedStyles = window.getComputedStyle(div);
+    const strValue = computedStyles.getPropertyValue(type);
+    return parseFloat(strValue);
   }
 
   private resetZoomView(): void {
