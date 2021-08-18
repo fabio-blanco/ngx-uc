@@ -21,7 +21,7 @@ class TestImageComponent {
 @Component({
   template: `
 <img src="https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
-     [style]="{'width': '500px'}" uc-zoom-view [uc-zoom-view-config]="customOptions">
+     [style]="{'width': '500px'}" uc-zoom-view [uc-zoom-view-config]="customOptions" [(ucZoomOn)]="on">
   `,
   styles: [
     `
@@ -53,6 +53,9 @@ class TestImageComponent {
   encapsulation: ViewEncapsulation.None
 })
 class TestCustomizedOptionsImageComponent {
+
+  on = true;
+
   customOptions:UcZoomViewConfig = {
     cssClasses: {
       imageContainer: 'custom-img-container',
@@ -60,6 +63,9 @@ class TestCustomizedOptionsImageComponent {
       zoomView: 'custom-zoom-result'
     }
   };
+
+  @ViewChild(UcZoomViewComponent)
+  ucZoomViewComponent!: UcZoomViewComponent;
 }
 
 @Component({
@@ -713,6 +719,20 @@ describe('UcZoomViewComponent', () => {
 
   });
 
+  it('.onImgMouseMove should do nothing if turned off', () => {
+    const eventFake = new MouseEvent('mousemove');
+
+    component['isImageLoaded'] = true;
+    component.ucZoomOn = false;
+
+    spyOn<any>(UcZoomViewComponent, 'calculateLensPosition');
+
+    component.onImgMouseMove(eventFake);
+
+    expect(UcZoomViewComponent['calculateLensPosition']).not.toHaveBeenCalled();
+
+  });
+
   it('.onImgMouseMove should use given image instead of event target when available', () => {
     const eventImgDummy: HTMLImageElement = new Image(10, 10);
     const otherImgDummy: HTMLImageElement = new Image(20, 20);
@@ -815,6 +835,21 @@ describe('UcZoomViewComponent', () => {
     const eventFake = new MouseEvent('mousemove');
 
     component['isImageLoaded'] = false;
+
+    const renderer = fixture.debugElement.injector.get(Renderer2);
+
+    spyOn(renderer, 'removeClass');
+
+    component.onImgMouseEnter(eventFake);
+
+    expect(renderer.removeClass).not.toHaveBeenCalled();
+  });
+
+  it('.onImgMouseEnter should do nothing on component turned off', () => {
+    const eventFake = new MouseEvent('mousemove');
+
+    component['isImageLoaded'] = true;
+    component.ucZoomOn = false;
 
     const renderer = fixture.debugElement.injector.get(Renderer2);
 
@@ -1328,6 +1363,27 @@ describe('UcZoomViewComponent with custom options', () => {
     expect(wrapperDiv.querySelector('div.custom-zoom-lens')).toBeTruthy();
     expect(wrapperDiv.querySelector('div.custom-zoom-result')).toBeTruthy();
   });
+
+  it('should not display zoom when turned off', () => {
+    component.on = false;
+    fixture.detectChanges();
+
+    const ucZoomViewComponent = component.ucZoomViewComponent;
+
+    spyOn<any>(ucZoomViewComponent, 'startZoom');
+
+    ucZoomViewComponent.onImgMouseEnter(new MouseEvent('mouseenter'));
+
+    expect(ucZoomViewComponent['startZoom']).not.toHaveBeenCalled();
+
+    spyOn<any>(UcZoomViewComponent, 'calculateLensPosition');
+
+    ucZoomViewComponent.onImgMouseMove(new MouseEvent('mousemove'));
+
+    expect(UcZoomViewComponent['calculateLensPosition']).not.toHaveBeenCalled();
+
+  });
+
 });
 
 describe('UcZoomViewComponent with custom view', () => {

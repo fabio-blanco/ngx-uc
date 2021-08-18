@@ -27,6 +27,24 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input('uc-z-view')
   ucZoomResultView: any;
 
+  private _ucZoomOn: boolean = true;
+
+  @Input()
+  set ucZoomOn(on: boolean) {
+    this._ucZoomOn = on;
+    if (this.isReady && !on) {
+      this.finishZoom();
+    }
+    this.ucZoomOnChange.emit(on);
+  }
+
+  get ucZoomOn() {
+    return this._ucZoomOn;
+  }
+
+  @Output()
+  ucZoomOnChange = new EventEmitter<boolean>();
+
   private cx: number = 0;
   private cy: number = 0;
 
@@ -204,7 +222,7 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
   onImgMouseMove(event: MouseEvent, imgElement: HTMLImageElement | null = null): void {
     event.preventDefault();
 
-    if (!this.isReady) return;
+    if (!this.isReady || !this.ucZoomOn) return;
 
     const srcImg = imgElement? imgElement : event.target as HTMLImageElement;
 
@@ -224,8 +242,28 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onImgMouseEnter(event: MouseEvent) {
 
+    if (!this.isReady || !this.ucZoomOn) return;
+
+    this.startZoom();
+  }
+
+  onImgMouseLeave(event: MouseEvent): void {
+
     if (!this.isReady) return;
 
+    this.finishZoom();
+  }
+
+  onImageLoaded(srcImg:HTMLImageElement) {
+    this.initializeZoomDivBackgroundSize(srcImg);
+    this.isImageLoaded = true;
+  }
+
+  onImageLoadFailed() {
+    console.error('uc-zoom-view: It was not possible to load the image!');
+  }
+
+  private startZoom(): void {
     if (this.isSetExternalViewWithResetOn()) {
       this.initializeZoomDiv(this.getNativeElement() as HTMLImageElement);
     }
@@ -236,10 +274,7 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.renderer.removeClass(this.lens, this.config.cssClasses.hideLens);
   }
 
-  onImgMouseLeave(event: MouseEvent): void {
-
-    if (!this.isReady) return;
-
+  private finishZoom(): void {
     if (this.isSetExternalViewWithResetOn()) {
       this.resetZoomView();
     }
@@ -248,15 +283,6 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
       this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
     }
     this.renderer.addClass(this.lens, this.config.cssClasses.hideLens);
-  }
-
-  onImageLoaded(srcImg:HTMLImageElement) {
-    this.initializeZoomDivBackgroundSize(srcImg);
-    this.isImageLoaded = true;
-  }
-
-  onImageLoadFailed() {
-    console.error('uc-zoom-view: It was not possible to load the image!');
   }
 
   private onImageSourceChange(): void {
