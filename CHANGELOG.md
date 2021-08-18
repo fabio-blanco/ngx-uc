@@ -16,24 +16,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- A new configuration property `viewPosition` to the `uc-zoom-view` component to choose the 
-position of the view between 4 options: *top*, *right (default)*, *left*, *bottom*.
-- A new configuration property `viewDistance` to the `uc-zoom-view` component to choose the 
-distance between the image element and the zoom view.
-- Added a z-index to the zoom view css class in the default css template to allow it to 
-always be on top.
-- Support to change detect changes on the src of the image on the `uc-zoom-view` component.
-- A new two-way binding input property `ucZoomOn` on the `uc-zoom-view` to turn
-the zoom functionality on or off at runtime.
-
-### Removed
-
-- Removed the margin left from the zoom view div css class in the default css template
-in favor of the new `viewDistance` property.
 
 ## [Initial Alpha Releases]
+
+### [0.3.0] - 2021-08-17
+
+#### Added
+
+- A new configuration property `viewPosition` to the `uc-zoom-view` component to choose the
+  position of the view between 4 options: *top*, *right (default)*, *left*, *bottom*.
+- A new configuration property `viewDistance` to the `uc-zoom-view` component to choose the
+  distance between the image element and the zoom view.
+- Added a z-index to the zoom view css class in the default css template to allow it to
+  always be on top.
+- Support to change detect changes on the src of the image on the `uc-zoom-view` component.
+- A new two-way binding input property `ucZoomOn` on the `uc-zoom-view` to turn
+  the zoom functionality on or off at runtime.
+
+#### Removed
+
+- Removed the margin left from the zoom view div css class in the default css template
+  in favor of the new `viewDistance` property.
 
 ### [0.2.0] - 2021-08-13
 
@@ -66,7 +69,8 @@ in favor of the new `viewDistance` property.
 - The starting bootstrap point of the project
 
 
-[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.3.0...HEAD
 [Initial Alpha Releases]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...HEAD
+[0.3.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...v0.2.0
 [0.0.1]: https://github.com/fabio-blanco/ngx-uc/releases/tag/0.0.1
