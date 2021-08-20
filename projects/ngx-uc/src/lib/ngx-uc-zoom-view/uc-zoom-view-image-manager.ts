@@ -5,7 +5,11 @@ import {UcCoordinates} from "../uc-coordinates";
 
 export class UcZoomViewImageManager extends UcZoomViewManager{
 
-  private srcMutationObserver!: MutationObserver;
+  get image(): HTMLImageElement {
+    return this.getImageElement();
+  }
+
+  private readonly srcMutationObserver!: MutationObserver;
 
   private unListeners: (() => void)[] = [];
 

@@ -9,6 +9,22 @@ enum ComputedDimensionType {
 
 export abstract class UcZoomViewManager {
 
+  turnedOn = true;
+
+  get container() {
+    return this.outerDiv;
+  }
+
+  get zoomLens() {
+    return this.lens;
+  }
+
+  get zoomView() {
+    return this.zoomResult;
+  }
+
+  abstract get image(): HTMLImageElement;
+
   protected _config: EnforcedUcZoomViewConfig;
 
   protected cx: number = 0;
@@ -19,7 +35,6 @@ export abstract class UcZoomViewManager {
   protected lens!: HTMLDivElement;
   protected isInitialized = false;
   protected isImageLoaded = false;
-  turnedOn = true;
 
   get isReady() {
     return this.isInitialized && this.isImageLoaded;

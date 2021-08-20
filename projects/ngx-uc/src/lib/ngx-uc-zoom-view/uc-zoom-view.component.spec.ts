@@ -398,6 +398,30 @@ describe('UcZoomViewComponent as a directive in an image html tag', () => {
     }, 400);
   });
 
+  it('should properly expose the container', () => {
+    const container = component.ucZoomViewComponent.container;
+
+    expect(container).toBe(wrapperDiv);
+  });
+
+  it('should properly expose the zoom lens', () => {
+    const lens = component.ucZoomViewComponent.zoomLens;
+
+    expect(lens).toBe(wrapperDiv.querySelector('div.uc-img-zoom-lens'));
+  });
+
+  it('should properly expose the zoom result view', () => {
+    const zoomView = component.ucZoomViewComponent.zoomView;
+
+    expect(zoomView).toBe(wrapperDiv.querySelector('div.uc-img-zoom-result'));
+  });
+
+  it('should properly expose the image', () => {
+    const internalImage = component.ucZoomViewComponent.image;
+
+    expect(internalImage).toBe(image);
+  });
+
 });
 
 

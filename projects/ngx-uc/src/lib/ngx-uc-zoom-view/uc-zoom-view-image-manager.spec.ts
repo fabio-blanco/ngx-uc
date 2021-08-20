@@ -636,4 +636,8 @@ describe('UcZoomViewImageManager', () => {
     expect(zoomViewManager['resetZoomView']).not.toHaveBeenCalled();
   });
 
+  it('.image should return the image object of this component', () => {
+    expect(zoomViewManager.image).toBe(image);
+  });
+
 });

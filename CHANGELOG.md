@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Initial Alpha Releases]
 
+### Added
+
+- New properties (read only) exposed on the public api: `container`, `image`, `zoomLens`,
+`zoomView`
+
+### Changed
+
+- Refactoring on component `uc-zoom-view` for a cleaner public api
+- Property `exposedAs` from component `uc-zoom-view` changed from `ucNgZoomView` to `ucZoomView`
+
 ### [0.3.0] - 2021-08-17
 
 #### Added

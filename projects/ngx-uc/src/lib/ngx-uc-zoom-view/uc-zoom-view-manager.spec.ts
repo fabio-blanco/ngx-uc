@@ -4,6 +4,9 @@ import {UcCoordinates} from "../uc-coordinates";
 import {UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewPosition} from "./uc-zoom-view-config";
 
 class Implementation extends UcZoomViewManager {
+  get image(): HTMLImageElement {
+    return null as any;
+  }
   getImageElement(): HTMLImageElement {
     return null as any;
   }
@@ -573,5 +576,29 @@ describe('UcZoomViewManager', () => {
 
     expect(isReady).toBeFalse();
 
+  });
+
+  it('.container should return the container object', () => {
+    const aDiv = document.createElement('div');
+
+    zoomViewManager['outerDiv'] = aDiv;
+
+    expect(zoomViewManager.container).toBe(aDiv);
+  });
+
+  it('.zoomLens should return the lens object', () => {
+    const aDiv = document.createElement('div');
+
+    zoomViewManager['lens'] = aDiv;
+
+    expect(zoomViewManager.zoomLens).toBe(aDiv);
+  });
+
+  it('.zoomView should return the zoom result view object', () => {
+    const aDiv = document.createElement('div');
+
+    zoomViewManager['zoomResult'] = aDiv;
+
+    expect(zoomViewManager.zoomView).toBe(aDiv);
   });
 });

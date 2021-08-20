@@ -6,7 +6,7 @@ import {UcZoomViewImageManager} from "./uc-zoom-view-image-manager";
 
 @Component({
   selector: 'img[uc-zoom-view]',
-  exportAs: 'ucNgZoomView',
+  exportAs: 'ucZoomView',
   template: '<ng-content></ng-content>'
 })
 export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -43,6 +43,22 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get isReady() {
     return this.zoomViewManager.isReady;
+  }
+
+  get container() {
+    return this.zoomViewManager.container;
+  }
+
+  get zoomLens() {
+    return this.zoomViewManager.zoomLens;
+  }
+
+  get zoomView() {
+    return this.zoomViewManager.zoomView;
+  }
+
+  get image() {
+    return this.zoomViewManager.image;
   }
 
   private zoomViewManager!: UcZoomViewManager;
