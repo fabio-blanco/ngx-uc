@@ -422,6 +422,23 @@ describe('UcZoomViewComponent as a directive in an image html tag', () => {
     expect(internalImage).toBe(image);
   });
 
+  it('should resize the lens when the image gets resized',() => {
+    const height = component.ucZoomViewComponent.zoomLens.offsetHeight;
+    const width = component.ucZoomViewComponent.zoomLens.offsetWidth;
+
+    image.style.width = `${image.offsetWidth / 2}px`;
+    image.style.height = `${image.offsetHeight/ 2}px`;
+
+    setTimeout(() => {
+      const newHeight = component.ucZoomViewComponent.zoomLens.offsetHeight;
+      const newWidth = component.ucZoomViewComponent.zoomLens.offsetWidth;
+
+      expect(newHeight).toBeLessThan(height);
+      expect(newWidth).toBeLessThan(width);
+    }, 400);
+
+  });
+
 });
 
 

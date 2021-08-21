@@ -1,14 +1,11 @@
 import {UcZoomViewManager} from './uc-zoom-view-manager';
 import {ElementRef, Renderer2, RendererStyleFlags2} from "@angular/core";
 import {UcCoordinates} from "../uc-coordinates";
-import {UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewPosition} from "./uc-zoom-view-config";
+import {EnforcedUcZoomViewConfig, UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewLensProportionType, UcZoomViewPosition} from "./uc-zoom-view-config";
 
 class Implementation extends UcZoomViewManager {
   get image(): HTMLImageElement {
-    return null as any;
-  }
-  getImageElement(): HTMLImageElement {
-    return null as any;
+    return this.getNativeElement();
   }
 
   initializeViewer(): void {}
@@ -60,6 +57,14 @@ class Implementation extends UcZoomViewManager {
   callInitializeZoomDiv(srcImg: HTMLImageElement): void {
     return this.initializeZoomDiv(srcImg);
   }
+
+  callResizeLens() {
+    return this.resizeLens();
+  }
+
+  callUpdateLensDimensions(srcImg:HTMLImageElement): void {
+    return this.updateLensDimensions(srcImg);
+  }
 }
 
 describe('UcZoomViewManager', () => {
@@ -86,19 +91,27 @@ describe('UcZoomViewManager', () => {
     expect(zoomViewManager).toBeTruthy();
   });
 
+  function expectDefaultConfigValues(mergedConfig: EnforcedUcZoomViewConfig, hideLens: string = 'uc-hide-lens'): void {
+    expect(mergedConfig).toBeTruthy();
+    expect(mergedConfig.cssClasses).toBeTruthy();
+    expect(mergedConfig.cssClasses.imageContainer).toBe('uc-img-container');
+    expect(mergedConfig.cssClasses.lens).toBe('uc-img-zoom-lens');
+    expect(mergedConfig.cssClasses.zoomView).toBe('uc-img-zoom-result');
+    expect(mergedConfig.cssClasses.hideLens).toBe(hideLens);
+    expect(mergedConfig.resetExtViewOnMouseLeave).toBeTrue();
+    expect(mergedConfig.viewPosition).toBe(UcZoomViewPosition.RIGHT);
+    expect(mergedConfig.lensOptions).toBeTruthy();
+    expect(mergedConfig.lensOptions.automaticResize).toBeTrue();
+    expect(mergedConfig.lensOptions.sizeProportion).toBe('inferred');
+    expect(mergedConfig.lensOptions.baseProportionType).toBe(UcZoomViewLensProportionType.WIDTH);
+  }
+
   it('.mergeConfig should properly merge with no provided config', () => {
     const config = UC_ZOOM_VIEW_DEFAULT_CONFIG;
 
     const result = (UcZoomViewManager as any).mergeConfig(config, undefined);
 
-    expect(result).toBeTruthy();
-    expect(result.cssClasses).toBeTruthy();
-    expect(result.cssClasses.imageContainer).toBe('uc-img-container');
-    expect(result.cssClasses.lens).toBe('uc-img-zoom-lens');
-    expect(result.cssClasses.zoomView).toBe('uc-img-zoom-result');
-    expect(result.cssClasses.hideLens).toBe('uc-hide-lens');
-    expect(result.resetExtViewOnMouseLeave).toBeTrue();
-    expect(result.viewPosition).toBe(UcZoomViewPosition.RIGHT);
+    expectDefaultConfigValues(result);
   });
 
   it('.mergeConfig should properly merge with empty config', () => {
@@ -106,14 +119,7 @@ describe('UcZoomViewManager', () => {
 
     const result = (UcZoomViewManager as any).mergeConfig(config, {});
 
-    expect(result).toBeTruthy();
-    expect(result.cssClasses).toBeTruthy();
-    expect(result.cssClasses.imageContainer).toBe('uc-img-container');
-    expect(result.cssClasses.lens).toBe('uc-img-zoom-lens');
-    expect(result.cssClasses.zoomView).toBe('uc-img-zoom-result');
-    expect(result.cssClasses.hideLens).toBe('uc-hide-lens');
-    expect(result.resetExtViewOnMouseLeave).toBeTrue();
-    expect(result.viewPosition).toBe(UcZoomViewPosition.RIGHT);
+    expectDefaultConfigValues(result);
   });
 
   it('.mergeConfig should properly merge with partially provided config', () => {
@@ -123,14 +129,7 @@ describe('UcZoomViewManager', () => {
 
     const result = (UcZoomViewManager as any).mergeConfig(config, {cssClasses: {hideLens: hideLens}});
 
-    expect(result).toBeTruthy();
-    expect(result.cssClasses).toBeTruthy();
-    expect(result.cssClasses.imageContainer).toBe('uc-img-container');
-    expect(result.cssClasses.lens).toBe('uc-img-zoom-lens');
-    expect(result.cssClasses.zoomView).toBe('uc-img-zoom-result');
-    expect(result.cssClasses.hideLens).toBe(hideLens);
-    expect(result.resetExtViewOnMouseLeave).toBeTrue();
-    expect(result.viewPosition).toBe(UcZoomViewPosition.RIGHT);
+    expectDefaultConfigValues(result, hideLens);
   });
 
   it('.mergeConfig should properly merge with full provided config', () => {
@@ -144,7 +143,13 @@ describe('UcZoomViewManager', () => {
         hideLens: 'different-hide-lens-class'
       },
       resetExtViewOnMouseLeave: false,
-      viewPosition: UcZoomViewPosition.LEFT
+      viewPosition: UcZoomViewPosition.LEFT,
+      viewDistance: 10,
+      lensOptions: {
+        automaticResize: false,
+        sizeProportion: 0.3,
+        baseProportionType: UcZoomViewLensProportionType.HEIGHT
+      }
     };
 
     const result = (UcZoomViewManager as any).mergeConfig(config, fullyProvidedConfig);
@@ -157,6 +162,10 @@ describe('UcZoomViewManager', () => {
     expect(result.cssClasses.hideLens).toBe(fullyProvidedConfig.cssClasses?.hideLens);
     expect(result.resetExtViewOnMouseLeave).toBeFalse();
     expect(result.viewPosition).toBe(UcZoomViewPosition.LEFT);
+    expect(result.viewDistance).toBe(fullyProvidedConfig.viewDistance);
+    expect(result.lensOptions.automaticResize).toBe(fullyProvidedConfig.lensOptions?.automaticResize);
+    expect(result.lensOptions.sizeProportion).toBe(fullyProvidedConfig.lensOptions?.sizeProportion);
+    expect(result.lensOptions.baseProportionType).toBe(fullyProvidedConfig.lensOptions?.baseProportionType);
   });
 
   it('.getNativeElement should return the root native element', () => {
@@ -316,6 +325,132 @@ describe('UcZoomViewManager', () => {
     expect(zoomViewManager['initializeZoomDivBackgroundSize']).not.toHaveBeenCalled();
   });
 
+  it('.calculateLensDimensionsProportion should calculate lens size proportion when configured proportion is set to "inferred"', () => {
+    const lensStub = {
+      offsetWidth: 50
+    } as HTMLDivElement;
+
+    const imageStub = {
+      offsetWidth: 100
+    } as HTMLImageElement;
+
+    const result = zoomViewManager['calculateLensDimensionsProportion'](imageStub, lensStub);
+
+    expect(result).toBe(0.5);
+  });
+
+  it('.calculateLensDimensionsProportion should return lens size proportion according to configured proportion when set', () => {
+    const lensStub = {
+      offsetWidth: 50
+    } as HTMLDivElement;
+
+    const imageStub = {
+      offsetWidth: 100
+    } as HTMLImageElement;
+
+    zoomViewManager['config'].lensOptions.sizeProportion = 0.3;
+
+    const result = zoomViewManager['calculateLensDimensionsProportion'](imageStub, lensStub);
+
+    expect(result).toBe(0.3);
+  });
+
+  it('.calculateLensDimensionsProportion should throw a TypeError when configured size is not between 0 and 1', () => {
+    const lensStub = {
+      offsetWidth: 50
+    } as HTMLDivElement;
+
+    const imageStub = {
+      offsetWidth: 100
+    } as HTMLImageElement;
+
+    zoomViewManager['config'].lensOptions.sizeProportion = 0;
+
+    expect(() => zoomViewManager['calculateLensDimensionsProportion'](imageStub, lensStub))
+      .toThrow(new TypeError('The configuration "lensOptions.sizeProportion" has an invalid value.'));
+
+    zoomViewManager['config'].lensOptions.sizeProportion = 1;
+
+    expect(() => zoomViewManager['calculateLensDimensionsProportion'](imageStub, lensStub))
+      .toThrow(new TypeError('The configuration "lensOptions.sizeProportion" has an invalid value.'));
+  });
+
+  it('.calculateLensDimensionsProportion should throw a TypeError when configured size is not "inferred" or a number', () => {
+    const lensStub = {
+      offsetWidth: 50
+    } as HTMLDivElement;
+
+    const imageStub = {
+      offsetWidth: 100
+    } as HTMLImageElement;
+
+    (zoomViewManager['config'].lensOptions.sizeProportion as any) = 'sbrubles';
+
+    expect(() => zoomViewManager['calculateLensDimensionsProportion'](imageStub, lensStub))
+      .toThrow(new TypeError('The configuration "lensOptions.sizeProportion" has an invalid value.'));
+  });
+
+  function prepareUpdateLensDimensionsTest(): {imageStub: HTMLImageElement, lensStub: HTMLDivElement} {
+    const imageStub = {
+      offsetWidth: 10,
+      offsetHeight: 20
+    } as HTMLImageElement;
+
+    const lensStub = {
+      style: {
+        width: '',
+        height: ''
+      }
+    } as HTMLDivElement;
+
+    zoomViewManager['lens'] = lensStub;
+    zoomViewManager['lensSizeProportion'] = 0.5;
+
+    return {imageStub: imageStub, lensStub: lensStub};
+  }
+
+  it('.updateLensDimensions should calculate and update lens dimensions correctly based on the right proportion for base type WIDTH', () => {
+    const {imageStub, lensStub} = prepareUpdateLensDimensionsTest();
+
+    zoomViewManager.callUpdateLensDimensions(imageStub);
+
+    expect(lensStub.style.width).toBe('5px');
+    expect(lensStub.style.height).toBe('5px');
+  });
+
+  it('.updateLensDimensions should calculate and update lens dimensions correctly based on the right proportion for base type HEIGHT', () => {
+    const {imageStub, lensStub} = prepareUpdateLensDimensionsTest();
+
+    zoomViewManager['config'].lensOptions.baseProportionType = UcZoomViewLensProportionType.HEIGHT;
+
+    zoomViewManager.callUpdateLensDimensions(imageStub);
+
+    expect(lensStub.style.width).toBe('10px');
+    expect(lensStub.style.height).toBe('10px');
+  });
+
+  it('.updateLensDimensions should calculate and update lens dimensions correctly based on the right proportion for base type SMALLER_SIZE', () => {
+    const {imageStub, lensStub} = prepareUpdateLensDimensionsTest();
+
+    zoomViewManager['config'].lensOptions.baseProportionType = UcZoomViewLensProportionType.SMALLER_SIZE;
+
+    zoomViewManager.callUpdateLensDimensions(imageStub);
+
+    expect(lensStub.style.width).toBe('5px');
+    expect(lensStub.style.height).toBe('5px');
+  });
+
+  it('.updateLensDimensions should calculate and update lens dimensions correctly based on the right proportion for base type BIGGER_SIZE', () => {
+    const {imageStub, lensStub} = prepareUpdateLensDimensionsTest();
+
+    zoomViewManager['config'].lensOptions.baseProportionType = UcZoomViewLensProportionType.BIGGER_SIZE;
+
+    zoomViewManager.callUpdateLensDimensions(imageStub);
+
+    expect(lensStub.style.width).toBe('10px');
+    expect(lensStub.style.height).toBe('10px');
+  });
+
   it('.calculateRatioBetweenResultAndLens should calculate the ratio between result and lens', () => {
     const zoomResultDivStub: Partial<HTMLDivElement> = {
       offsetWidth: 20,
@@ -334,6 +469,56 @@ describe('UcZoomViewManager', () => {
     expect(zoomViewManager['cx']).toBe(10);
     expect(zoomViewManager['cy']).toBe(20);
 
+  });
+
+  it('.resizeLens should update lens dimensions and the rate between result view and lens dimensions reinitializing zoom view background size', () => {
+    zoomViewManager['isImageLoaded'] = true;
+    zoomViewManager['isInitialized'] = true;
+
+    spyOn<any>(zoomViewManager, 'updateLensDimensions');
+    spyOn<any>(zoomViewManager, 'calculateRatioBetweenResultAndLens');
+    spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
+
+    const imageDummy = {} as HTMLImageElement;
+    spyOn(zoomViewManager, 'getNativeElement').and.returnValue(imageDummy);
+
+    zoomViewManager.callResizeLens();
+
+    expect(zoomViewManager['updateLensDimensions']).toHaveBeenCalledOnceWith(imageDummy);
+    expect(zoomViewManager['calculateRatioBetweenResultAndLens']).toHaveBeenCalled();
+    expect(zoomViewManager['initializeZoomDivBackgroundSize']).toHaveBeenCalled();
+  });
+
+  it('.resizeLens should do nothing if not ready', () => {
+    zoomViewManager['isImageLoaded'] = false;
+
+    spyOn<any>(zoomViewManager, 'updateLensDimensions');
+    spyOn<any>(zoomViewManager, 'calculateRatioBetweenResultAndLens');
+    spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
+
+    const imageDummy = {} as HTMLImageElement;
+    spyOn(zoomViewManager, 'getNativeElement').and.returnValue(imageDummy);
+
+    zoomViewManager.callResizeLens();
+
+    expect(zoomViewManager['updateLensDimensions']).not.toHaveBeenCalled();
+    expect(zoomViewManager['calculateRatioBetweenResultAndLens']).not.toHaveBeenCalled();
+    expect(zoomViewManager['initializeZoomDivBackgroundSize']).not.toHaveBeenCalled();
+  });
+
+  it('.resizeLens should do nothing if automatic resize is turned off', () => {
+    spyOn<any>(zoomViewManager, 'updateLensDimensions');
+    spyOn<any>(zoomViewManager, 'calculateRatioBetweenResultAndLens');
+
+    const imageDummy = {} as HTMLImageElement;
+
+    spyOn(zoomViewManager, 'getNativeElement').and.returnValue(imageDummy);
+    zoomViewManager['config'].lensOptions.automaticResize = false;
+
+    zoomViewManager.callResizeLens();
+
+    expect(zoomViewManager['updateLensDimensions']).not.toHaveBeenCalled();
+    expect(zoomViewManager['calculateRatioBetweenResultAndLens']).not.toHaveBeenCalled();
   });
 
   it('.setZoomViewResultImage should calculate the ratio between result and lens', () => {

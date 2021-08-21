@@ -5,6 +5,11 @@ export interface UcZoomViewConfig {
   resetExtViewOnMouseLeave?: boolean;
   viewPosition?: UcZoomViewPosition;
   viewDistance?: number;
+  lensOptions?: {
+    automaticResize?: boolean,
+    sizeProportion?: number | UcLensProportionInferred,
+    baseProportionType?: UcZoomViewLensProportionType
+  };
 }
 
 export interface EnforcedUcZoomViewConfig {
@@ -12,13 +17,24 @@ export interface EnforcedUcZoomViewConfig {
   resetExtViewOnMouseLeave: boolean;
   viewPosition: UcZoomViewPosition;
   viewDistance: number;
+  lensOptions: {
+    automaticResize: boolean,
+    sizeProportion: number | UcLensProportionInferred,
+    baseProportionType: UcZoomViewLensProportionType
+  };
 }
+
+export type UcLensProportionInferred = 'inferred';
 
 export enum UcZoomViewPosition {
   LEFT = 'left',
   RIGHT = 'right',
   TOP = 'top',
   BOTTOM = 'bottom'
+}
+
+export enum UcZoomViewLensProportionType {
+  WIDTH, HEIGHT, BIGGER_SIZE, SMALLER_SIZE
 }
 
 export const UC_ZOOM_VIEW_DEFAULT_CONFIG: EnforcedUcZoomViewConfig = {
@@ -30,5 +46,10 @@ export const UC_ZOOM_VIEW_DEFAULT_CONFIG: EnforcedUcZoomViewConfig = {
   },
   resetExtViewOnMouseLeave: true,
   viewPosition: UcZoomViewPosition.RIGHT,
-  viewDistance: 0
+  viewDistance: 0,
+  lensOptions: {
+    automaticResize: true,
+    sizeProportion: 'inferred',
+    baseProportionType: UcZoomViewLensProportionType.WIDTH
+  }
 };

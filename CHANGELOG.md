@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New properties (read only) exposed on the public api: `container`, `image`, `zoomLens`,
   `zoomView`
+- A new functionality to adjust the size of the lens according to the resizing of the image 
+on screen
+- A new set of properties `lensOptions` in config of the `ngx-uc-view` component to allow
+the dev to customize the lens resizing behavior (`automaticResize`, 
+`sizeProportion`, `baseProportionType`)
 
 ### Changed
 

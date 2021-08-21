@@ -1,15 +1,18 @@
 import {UcZoomViewManager} from "./uc-zoom-view-manager";
 import {ElementRef, Renderer2} from "@angular/core";
+
 import {UcZoomViewConfig} from "./uc-zoom-view-config";
 import {UcCoordinates} from "../uc-coordinates";
 
 export class UcZoomViewImageManager extends UcZoomViewManager{
 
   get image(): HTMLImageElement {
-    return this.getImageElement();
+    return this.getNativeElement();
   }
 
   private readonly srcMutationObserver!: MutationObserver;
+
+  private readonly imageResizeObserver!: ResizeObserver;
 
   private unListeners: (() => void)[] = [];
 
@@ -32,25 +35,28 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
         }
       });
     });
-  }
 
-  getImageElement(): HTMLImageElement {
-    return this.elRef.nativeElement;
+    this.imageResizeObserver = new ResizeObserver(() => {
+      that.resizeLens();
+    });
   }
 
   initializeViewer(): void {
-    const image = this.getImageElement();
-    this.outerDiv = this.wrapImage(image);
-    this.attachListenersToImage(image);
-    this.initializeLensAndResult(image);
+    const rootImage = this.image;
+    this.outerDiv = this.wrapImage(rootImage);
+    this.attachListenersToImage(rootImage);
+    this.initializeLensAndResult(rootImage);
     this.isInitialized = true;
-    this.isImageLoaded = this.isImageAlreadyLoaded(image);
+    this.isImageLoaded = this.isImageAlreadyLoaded(rootImage);
   }
 
   destroy(): void {
     this.unListeners.forEach(unl => unl());
     if (this.srcMutationObserver) {
       this.srcMutationObserver.disconnect();
+    }
+    if (this.imageResizeObserver) {
+      this.imageResizeObserver.disconnect();
     }
     this.unWrapImage(this.elRef.nativeElement);
   }
@@ -72,6 +78,9 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     this.unListeners.push(this.renderer.listen(srcImg, 'load', () => this.onImageLoaded(srcImg)));
     this.unListeners.push(this.renderer.listen(srcImg, 'error', ()=> this.onImageLoadFailed() ));
     this.srcMutationObserver.observe(srcImg, {attributes: true});
+    if (this.config.lensOptions.automaticResize) {
+      this.imageResizeObserver.observe(srcImg);
+    }
   }
 
   private initializeLensAndResult(srcImg:HTMLImageElement): void {
@@ -82,12 +91,25 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     }
     this.lens = this.creatLens(srcImg);
 
+    this.isImageLoaded = this.isImageAlreadyLoaded(srcImg);
+    if (this.isImageLoaded) {
+      this.initializeLensDimensions(srcImg);
+    }
+
     this.calculateRatioBetweenResultAndLens();
 
     if(!this.isSetExternalViewWithResetOn()) {
       this.initializeZoomDiv(srcImg);
     }
     this.initializeLens(srcImg);
+  }
+
+  private initializeLensDimensions(srcImg:HTMLImageElement): void {
+    this.lensSizeProportion = this.calculateLensDimensionsProportion(srcImg, this.lens);
+
+    if (this.config.lensOptions.automaticResize && this.config.lensOptions.sizeProportion !== 'inferred') {
+      this.updateLensDimensions(srcImg);
+    }
   }
 
   protected initializeLens(srcImg: HTMLImageElement): void {
@@ -151,17 +173,20 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
   }
 
   private onImageLoaded(srcImg:HTMLImageElement) {
+    if (!this.lensSizeProportion) {
+      this.initializeLensDimensions(srcImg);
+    }
+
     this.initializeZoomDivBackgroundSize(srcImg);
     this.isImageLoaded = true;
   }
 
   private onImageLoadFailed() {
-    console.error('uc-zoom-view: It was not possible to load the image!');
   }
 
   startZoom(): void {
     if (this.isSetExternalViewWithResetOn()) {
-      this.initializeZoomDiv(this.getImageElement());
+      this.initializeZoomDiv(this.image);
     }
 
     if(!this.ucZoomResultView) {
@@ -182,7 +207,7 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
   }
 
   private onImageSourceChange(): void {
-    const srcImage = this.getImageElement();
+    const srcImage = this.image;
     this.setZoomViewResultImage(srcImage);
     this.initializeZoomDivBackgroundSize(srcImage);
   }

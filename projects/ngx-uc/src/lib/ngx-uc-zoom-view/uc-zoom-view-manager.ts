@@ -1,6 +1,6 @@
 import {ElementRef, Renderer2} from "@angular/core";
 import {UcCoordinates} from "../uc-coordinates";
-import {EnforcedUcZoomViewConfig, UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewPosition} from "./uc-zoom-view-config";
+import {EnforcedUcZoomViewConfig, UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewLensProportionType, UcZoomViewPosition} from "./uc-zoom-view-config";
 
 enum ComputedDimensionType {
   WIDTH =  'width',
@@ -36,6 +36,8 @@ export abstract class UcZoomViewManager {
   protected isInitialized = false;
   protected isImageLoaded = false;
 
+  protected lensSizeProportion!: number;
+
   get isReady() {
     return this.isInitialized && this.isImageLoaded;
   }
@@ -50,8 +52,6 @@ export abstract class UcZoomViewManager {
   get config() {
     return this._config;
   }
-
-  abstract getImageElement(): HTMLImageElement;
 
   abstract initializeViewer(): void;
 
@@ -78,7 +78,14 @@ export abstract class UcZoomViewManager {
       resetExtViewOnMouseLeave: (typeof(inputConfig?.resetExtViewOnMouseLeave) !== 'undefined') ? inputConfig.resetExtViewOnMouseLeave :
         defaultConfig.resetExtViewOnMouseLeave,
       viewPosition: (typeof(inputConfig?.viewPosition) !== 'undefined') ? inputConfig.viewPosition : defaultConfig.viewPosition,
-      viewDistance: (typeof(inputConfig?.viewDistance) !== 'undefined') ? inputConfig.viewDistance : defaultConfig.viewDistance
+      viewDistance: (typeof(inputConfig?.viewDistance) !== 'undefined') ? inputConfig.viewDistance : defaultConfig.viewDistance,
+      lensOptions: {
+        automaticResize: (typeof(inputConfig?.lensOptions?.automaticResize) !== 'undefined') ?
+          inputConfig.lensOptions.automaticResize : defaultConfig.lensOptions.automaticResize,
+        sizeProportion: inputConfig?.lensOptions?.sizeProportion ? inputConfig.lensOptions.sizeProportion : defaultConfig.lensOptions.sizeProportion,
+        baseProportionType: (typeof(inputConfig?.lensOptions?.baseProportionType) !== 'undefined') ?
+          inputConfig.lensOptions.baseProportionType : defaultConfig.lensOptions.baseProportionType
+      }
     };
 
     return merged;
@@ -135,10 +142,56 @@ export abstract class UcZoomViewManager {
     this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
   }
 
+  protected calculateLensDimensionsProportion(srcImg:HTMLImageElement, lens: HTMLDivElement): number {
+    const configuredProportion = this.config.lensOptions.sizeProportion;
+    if (configuredProportion === 'inferred') {
+      return lens.offsetWidth / srcImg.offsetWidth;
+    } else if(configuredProportion > 0 && configuredProportion < 1) {
+      return configuredProportion;
+    } else {
+      throw new TypeError('The configuration "lensOptions.sizeProportion" has an invalid value.');
+    }
+  }
+
+  protected updateLensDimensions(srcImg:HTMLImageElement): void {
+    const baseSize = UcZoomViewManager.getBaseSize(this.config.lensOptions.baseProportionType, srcImg);
+    const dimension = `${baseSize * this.lensSizeProportion}px`;
+    this.lens.style.width = dimension;
+    this.lens.style.height = dimension;
+  }
+
+  private static getBaseSize(baseType: UcZoomViewLensProportionType, srcImg:HTMLImageElement): number {
+    switch (baseType) {
+      case UcZoomViewLensProportionType.WIDTH:
+        return srcImg.offsetWidth;
+      case UcZoomViewLensProportionType.HEIGHT:
+        return srcImg.offsetHeight;
+      case UcZoomViewLensProportionType.BIGGER_SIZE:
+        return srcImg.offsetWidth > srcImg.offsetHeight? srcImg.offsetWidth : srcImg.offsetHeight;
+      case UcZoomViewLensProportionType.SMALLER_SIZE:
+        return srcImg.offsetWidth < srcImg.offsetHeight? srcImg.offsetWidth : srcImg.offsetHeight;
+    }
+  }
+
   protected calculateRatioBetweenResultAndLens(): void {
     /* Calculate the ratio between result DIV and lens: */
-    this.cx = this.zoomResult.offsetWidth / this.lens.offsetWidth;
-    this.cy = this.zoomResult.offsetHeight / this.lens.offsetHeight;
+    /*this.cx = this.zoomResult.offsetWidth / this.lens.offsetWidth;
+    this.cy = this.zoomResult.offsetHeight / this.lens.offsetHeight;*/
+
+    // forced to be overprotective here because the browser was joking me
+    const [zWidth, zHeight] = UcZoomViewManager.getDivDimensions(this.zoomResult);
+    const [lWidth, lHeight] = UcZoomViewManager.getDivDimensions(this.lens);
+
+    this.cx = zWidth / lWidth;
+    this.cy = zHeight / lHeight;
+  }
+
+  protected resizeLens() {
+    if(this.isReady && this.config.lensOptions.automaticResize) {
+      this.updateLensDimensions(this.image);
+      this.calculateRatioBetweenResultAndLens();
+      this.initializeZoomDivBackgroundSize(this.image);
+    }
   }
 
   protected setZoomViewResultImage(srcImg: HTMLImageElement): void {
@@ -185,6 +238,24 @@ export abstract class UcZoomViewManager {
     const computedStyles = window.getComputedStyle(div);
     const strValue = computedStyles.getPropertyValue(type);
     return parseFloat(strValue);
+  }
+
+  private static getDivDimensions(div: HTMLDivElement): [number, number] {
+    let width = div.offsetWidth;
+    let height = div.offsetHeight;
+
+    if (width === 0 || height === 0) {
+      return UcZoomViewManager.getComputedDivDimensions(div);
+    }
+
+    return [width, height]
+  }
+
+  private static getComputedDivDimensions(div: HTMLDivElement): [number, number] {
+    const computedStyles = window.getComputedStyle(div);
+    const width = computedStyles.getPropertyValue('width');
+    const height = computedStyles.getPropertyValue('height');
+    return [parseInt(width), parseInt(height)];
   }
 
   protected calculateLensPosition(event: MouseEvent, srcImg: HTMLImageElement, lens: HTMLDivElement): UcCoordinates {
