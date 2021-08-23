@@ -18,6 +18,8 @@ class Implementation extends UcZoomViewManager {
 
   protected initializeLens(srcImg: HTMLImageElement): void {}
 
+  protected onImageResized() {}
+
   callGetCursorPosition(event: MouseEvent, srcImg: HTMLImageElement): UcCoordinates {
     return super.getCursorPosition(event, srcImg);
   }
@@ -472,9 +474,6 @@ describe('UcZoomViewManager', () => {
   });
 
   it('.resizeLens should update lens dimensions and the rate between result view and lens dimensions reinitializing zoom view background size', () => {
-    zoomViewManager['isImageLoaded'] = true;
-    zoomViewManager['isInitialized'] = true;
-
     spyOn<any>(zoomViewManager, 'updateLensDimensions');
     spyOn<any>(zoomViewManager, 'calculateRatioBetweenResultAndLens');
     spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
@@ -487,38 +486,6 @@ describe('UcZoomViewManager', () => {
     expect(zoomViewManager['updateLensDimensions']).toHaveBeenCalledOnceWith(imageDummy);
     expect(zoomViewManager['calculateRatioBetweenResultAndLens']).toHaveBeenCalled();
     expect(zoomViewManager['initializeZoomDivBackgroundSize']).toHaveBeenCalled();
-  });
-
-  it('.resizeLens should do nothing if not ready', () => {
-    zoomViewManager['isImageLoaded'] = false;
-
-    spyOn<any>(zoomViewManager, 'updateLensDimensions');
-    spyOn<any>(zoomViewManager, 'calculateRatioBetweenResultAndLens');
-    spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
-
-    const imageDummy = {} as HTMLImageElement;
-    spyOn(zoomViewManager, 'getNativeElement').and.returnValue(imageDummy);
-
-    zoomViewManager.callResizeLens();
-
-    expect(zoomViewManager['updateLensDimensions']).not.toHaveBeenCalled();
-    expect(zoomViewManager['calculateRatioBetweenResultAndLens']).not.toHaveBeenCalled();
-    expect(zoomViewManager['initializeZoomDivBackgroundSize']).not.toHaveBeenCalled();
-  });
-
-  it('.resizeLens should do nothing if automatic resize is turned off', () => {
-    spyOn<any>(zoomViewManager, 'updateLensDimensions');
-    spyOn<any>(zoomViewManager, 'calculateRatioBetweenResultAndLens');
-
-    const imageDummy = {} as HTMLImageElement;
-
-    spyOn(zoomViewManager, 'getNativeElement').and.returnValue(imageDummy);
-    zoomViewManager['config'].lensOptions.automaticResize = false;
-
-    zoomViewManager.callResizeLens();
-
-    expect(zoomViewManager['updateLensDimensions']).not.toHaveBeenCalled();
-    expect(zoomViewManager['calculateRatioBetweenResultAndLens']).not.toHaveBeenCalled();
   });
 
   it('.setZoomViewResultImage should calculate the ratio between result and lens', () => {

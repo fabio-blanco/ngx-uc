@@ -63,6 +63,8 @@ export abstract class UcZoomViewManager {
 
   protected abstract initializeLens(srcImg: HTMLImageElement): void;
 
+  protected abstract onImageResized(): void;
+
   getNativeElement<T>(): T {
     return this.elRef.nativeElement;
   }
@@ -187,11 +189,9 @@ export abstract class UcZoomViewManager {
   }
 
   protected resizeLens() {
-    if(this.isReady && this.config.lensOptions.automaticResize) {
-      this.updateLensDimensions(this.image);
-      this.calculateRatioBetweenResultAndLens();
-      this.initializeZoomDivBackgroundSize(this.image);
-    }
+    this.updateLensDimensions(this.image);
+    this.calculateRatioBetweenResultAndLens();
+    this.initializeZoomDivBackgroundSize(this.image);
   }
 
   protected setZoomViewResultImage(srcImg: HTMLImageElement): void {

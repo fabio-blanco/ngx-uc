@@ -25,6 +25,7 @@ on screen
 - A new set of properties `lensOptions` in config of the `ngx-uc-view` component to allow
 the dev to customize the lens resizing behavior (`automaticResize`, 
 `sizeProportion`, `baseProportionType`)
+- Auto adjust of the zoom view position on image resize
 
 ### Changed
 

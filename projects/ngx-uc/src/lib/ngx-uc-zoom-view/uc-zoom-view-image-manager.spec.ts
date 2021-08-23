@@ -212,6 +212,59 @@ describe('UcZoomViewImageManager', () => {
     expect( () => {(zoomViewImageManager as any).setExternalZoomResultContainer()}).toThrow(new TypeError('The view object is not a div. A custom zoom view should be a div.'));
   });
 
+  it('.onImageResized should resize lens and adjust zoom view position', () => {
+    zoomViewManager['isImageLoaded'] = true;
+    zoomViewManager['isInitialized'] = true;
+
+    const zoomResultDiv = document.createElement('div');
+    zoomViewManager['zoomResult'] = zoomResultDiv;
+
+    spyOn<any>(zoomViewManager, 'resizeLens');
+    spyOn<any>(zoomViewManager, 'setViewPosition');
+
+    (zoomViewManager as any).onImageResized();
+
+    expect(zoomViewManager['resizeLens']).toHaveBeenCalled();
+    expect(zoomViewManager['setViewPosition']).toHaveBeenCalledOnceWith(zoomResultDiv, image);
+  });
+
+  it('.onImageResized should do nothing if not ready', () => {
+    zoomViewManager['isImageLoaded'] = false;
+
+    spyOn<any>(zoomViewManager, 'resizeLens');
+    spyOn<any>(zoomViewManager, 'setViewPosition');
+
+    (zoomViewManager as any).onImageResized();
+
+    expect(zoomViewManager['resizeLens']).not.toHaveBeenCalled();
+    expect(zoomViewManager['setViewPosition']).not.toHaveBeenCalled();
+  });
+
+  it('.onImageResized should not resize the lens if automatic resize is turned off', () => {
+    const config: UcZoomViewConfig = {
+      lensOptions: {
+        automaticResize: false
+      }
+    }
+
+    const elRef: ElementRef = new ElementRef(image);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, undefined, config, lensPositionCallback);
+
+    zoomViewImageManager['isImageLoaded'] = true;
+    zoomViewImageManager['isInitialized'] = true;
+
+    const zoomResultDiv = document.createElement('div');
+    zoomViewImageManager['zoomResult'] = zoomResultDiv;
+
+    spyOn<any>(zoomViewImageManager, 'resizeLens');
+    spyOn<any>(zoomViewImageManager, 'setViewPosition');
+
+    (zoomViewImageManager as any).onImageResized();
+
+    expect(zoomViewImageManager['resizeLens']).not.toHaveBeenCalled();
+    expect(zoomViewImageManager['setViewPosition']).toHaveBeenCalledOnceWith(zoomResultDiv, image);
+  });
+
   function prepareInitializeLensAndResultTest(imageFullyLoaded: boolean = true): {lensDiv: HTMLDivElement, zoomResultDiv: HTMLDivElement} {
     const zoomResultDiv = document.createElement('div');
     const lensDiv = document.createElement('div');

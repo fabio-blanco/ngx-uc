@@ -37,7 +37,7 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     });
 
     this.imageResizeObserver = new ResizeObserver(() => {
-      that.resizeLens();
+      that.onImageResized();
     });
   }
 
@@ -80,6 +80,15 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     this.srcMutationObserver.observe(srcImg, {attributes: true});
     if (this.config.lensOptions.automaticResize) {
       this.imageResizeObserver.observe(srcImg);
+    }
+  }
+
+  protected onImageResized() {
+    if(this.isReady) {
+      if (this.config.lensOptions.automaticResize){
+        this.resizeLens();
+      }
+      this.setViewPosition(this.zoomResult, this.image);
     }
   }
 
