@@ -16,23 +16,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [Initial Alpha Releases]
+
+### [0.4.0] - 2021-08-23
+
 ### Added
 
 - New properties (read only) exposed on the public api: `container`, `image`, `zoomLens`,
   `zoomView`
-- A new functionality to adjust the size of the lens according to the resizing of the image 
-on screen
-- A new set of properties `lensOptions` in config of the `ngx-uc-view` component to allow
-the dev to customize the lens resizing behavior (`automaticResize`, 
-`sizeProportion`, `baseProportionType`)
+- A new functionality to adjust the size of the lens according to the resizing of the image
+  on screen
+- A new set of properties `lensOptions` in config of the `uc-zoom-view` component to allow
+  the dev to customize the lens resizing behavior (`automaticResize`,
+  `sizeProportion`, `baseProportionType`)
 - Auto adjust of the zoom view position on image resize
 
 ### Changed
 
 - Refactoring on component `uc-zoom-view` for a cleaner public api
 - Property `exposedAs` from component `uc-zoom-view` changed from `ucNgZoomView` to `ucZoomView`
-
-## [Initial Alpha Releases]
 
 ### [0.3.0] - 2021-08-17
 
@@ -84,8 +86,9 @@ the dev to customize the lens resizing behavior (`automaticResize`,
 - The starting bootstrap point of the project
 
 
-[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.0...HEAD
 [Initial Alpha Releases]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...HEAD
+[0.4.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...v0.2.0
 [0.0.1]: https://github.com/fabio-blanco/ngx-uc/releases/tag/0.0.1
