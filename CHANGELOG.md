@@ -16,11 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Removed missing debug console log
 
 ## [Initial Alpha Releases]
+
+### [0.4.2] - 2021-08-24
+
+#### Fixed
+
+- Removed missing debug console log
 
 ### [0.4.1] - 2021-08-24
 
@@ -97,8 +100,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The starting bootstrap point of the project
 
 
-[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.2...HEAD
 [Initial Alpha Releases]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...HEAD
+[0.4.2]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.2.0...v0.3.0
