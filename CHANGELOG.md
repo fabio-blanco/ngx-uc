@@ -16,12 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Fixed a bug with calculation of lens dimensions proportions when the configured proportion
-was set as 'inferred' (the default value) leading to a zero size lens.
 
 ## [Initial Alpha Releases]
+
+### [0.4.1] - 2021-08-24
+
+#### Fixed
+
+- Fixed a bug with calculation of lens dimensions proportions when the configured proportion
+  was set as 'inferred' (the default value) leading to a zero size lens.
 
 ### [0.4.0] - 2021-08-23
 
@@ -91,8 +94,9 @@ was set as 'inferred' (the default value) leading to a zero size lens.
 - The starting bootstrap point of the project
 
 
-[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.1...HEAD
 [Initial Alpha Releases]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...HEAD
+[0.4.1]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...v0.2.0
