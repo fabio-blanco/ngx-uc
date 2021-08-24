@@ -161,7 +161,6 @@ export abstract class UcZoomViewManager {
     const dimension = `${baseSize * this.lensSizeProportion}px`;
     this.lens.style.width = dimension;
     this.lens.style.height = dimension;
-    console.log(`baseSize: ${baseSize}, dimension: ${dimension}, isReady: ${this.isReady? 'yes' : 'no'}`);
   }
 
   private static getBaseSize(baseType: UcZoomViewLensProportionType, srcImg:HTMLImageElement): number {
