@@ -16,11 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a bug with calculation of lens dimensions proportions when the configured proportion
+was set as 'inferred' (the default value) leading to a zero size lens.
+
 ## [Initial Alpha Releases]
 
 ### [0.4.0] - 2021-08-23
 
-### Added
+#### Added
 
 - New properties (read only) exposed on the public api: `container`, `image`, `zoomLens`,
   `zoomView`
@@ -31,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `sizeProportion`, `baseProportionType`)
 - Auto adjust of the zoom view position on image resize
 
-### Changed
+#### Changed
 
 - Refactoring on component `uc-zoom-view` for a cleaner public api
 - Property `exposedAs` from component `uc-zoom-view` changed from `ucNgZoomView` to `ucZoomView`

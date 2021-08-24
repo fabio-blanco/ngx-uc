@@ -147,7 +147,8 @@ export abstract class UcZoomViewManager {
   protected calculateLensDimensionsProportion(srcImg:HTMLImageElement, lens: HTMLDivElement): number {
     const configuredProportion = this.config.lensOptions.sizeProportion;
     if (configuredProportion === 'inferred') {
-      return lens.offsetWidth / srcImg.offsetWidth;
+      const lensWidth = UcZoomViewManager.getDivDimension(lens, ComputedDimensionType.WIDTH);
+      return lensWidth / srcImg.offsetWidth;
     } else if(configuredProportion > 0 && configuredProportion < 1) {
       return configuredProportion;
     } else {
@@ -160,6 +161,7 @@ export abstract class UcZoomViewManager {
     const dimension = `${baseSize * this.lensSizeProportion}px`;
     this.lens.style.width = dimension;
     this.lens.style.height = dimension;
+    console.log(`baseSize: ${baseSize}, dimension: ${dimension}, isReady: ${this.isReady? 'yes' : 'no'}`);
   }
 
   private static getBaseSize(baseType: UcZoomViewLensProportionType, srcImg:HTMLImageElement): number {
@@ -232,6 +234,11 @@ export abstract class UcZoomViewManager {
         const rightPositionValue = srcImg.width + this.config.viewDistance;
         this.renderer.setStyle(zoomResult, 'left', `${rightPositionValue}px`);
     }
+  }
+
+  private static getDivDimension(div: HTMLDivElement, type: ComputedDimensionType): number {
+    let value: number = type === ComputedDimensionType.WIDTH ? div.offsetWidth : div.offsetHeight;
+    return value > 0 ? value : UcZoomViewManager.getComputedDivValue(div, type);
   }
 
   private static getComputedDivValue(div: HTMLDivElement, type: ComputedDimensionType): number {

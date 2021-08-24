@@ -341,6 +341,23 @@ describe('UcZoomViewManager', () => {
     expect(result).toBe(0.5);
   });
 
+  it('.calculateLensDimensionsProportion should calculate lens size proportion with configured proportion "inferred" ' +
+       'even if the browser returns a lens offsetWidth = 0', () => {
+    const lensStub = {
+      offsetWidth: 0
+    } as HTMLDivElement;
+
+    const imageStub = {
+      offsetWidth: 100
+    } as HTMLImageElement;
+
+    spyOn<any>(UcZoomViewManager, 'getComputedDivValue').and.returnValue(50);
+
+    const result = zoomViewManager['calculateLensDimensionsProportion'](imageStub, lensStub);
+
+    expect(result).toBe(0.5);
+  });
+
   it('.calculateLensDimensionsProportion should return lens size proportion according to configured proportion when set', () => {
     const lensStub = {
       offsetWidth: 50
