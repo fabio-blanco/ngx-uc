@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added support to five more events on the public api of the `uc-zoom_view` component totalizing 
+seven events (`ucZoomOnChange`, `lensPosition`, `ready`, `zoomStarted`, `zoomEnded`,
+`imageSrcChanged`, `resizeLensDimensions`)
 
 ## [Initial Alpha Releases]
 

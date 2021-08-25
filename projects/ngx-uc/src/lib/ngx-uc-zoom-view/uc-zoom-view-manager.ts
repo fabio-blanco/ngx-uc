@@ -1,6 +1,7 @@
 import {ElementRef, Renderer2} from "@angular/core";
 import {UcCoordinates} from "../uc-coordinates";
 import {EnforcedUcZoomViewConfig, UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig, UcZoomViewLensProportionType, UcZoomViewPosition} from "./uc-zoom-view-config";
+import {UcZoomViewEventCallbacks, UcZoomViewResizeLensDimensionsEvent} from "./uc-zoom-view-events";
 
 enum ComputedDimensionType {
   WIDTH =  'width',
@@ -38,6 +39,8 @@ export abstract class UcZoomViewManager {
 
   protected lensSizeProportion!: number;
 
+  protected oldLensDimensionsValue!: number
+
   get isReady() {
     return this.isInitialized && this.isImageLoaded;
   }
@@ -45,7 +48,7 @@ export abstract class UcZoomViewManager {
   constructor(protected elRef: ElementRef,
               protected renderer: Renderer2,
               inputConfig: UcZoomViewConfig | undefined,
-              protected lensPositionUpdate: ((coordinates: UcCoordinates) => void)) {
+              protected eventCallbacks: UcZoomViewEventCallbacks) {
     this._config = UcZoomViewManager.mergeConfig(UC_ZOOM_VIEW_DEFAULT_CONFIG, inputConfig);
   }
 
@@ -156,11 +159,16 @@ export abstract class UcZoomViewManager {
     }
   }
 
-  protected updateLensDimensions(srcImg:HTMLImageElement): void {
+  protected updateLensDimensions(srcImg:HTMLImageElement): [number, number | null] {
     const baseSize = UcZoomViewManager.getBaseSize(this.config.lensOptions.baseProportionType, srcImg);
-    const dimension = `${baseSize * this.lensSizeProportion}px`;
+    const newDimension = baseSize * this.lensSizeProportion;
+    const dimension = `${newDimension}px`;
     this.lens.style.width = dimension;
     this.lens.style.height = dimension;
+    const oldDimension = this.oldLensDimensionsValue || UcZoomViewManager.getDivDimension(this.lens, ComputedDimensionType.WIDTH) || null;
+    this.oldLensDimensionsValue = newDimension;
+
+    return [newDimension, oldDimension];
   }
 
   private static getBaseSize(baseType: UcZoomViewLensProportionType, srcImg:HTMLImageElement): number {
@@ -190,9 +198,11 @@ export abstract class UcZoomViewManager {
   }
 
   protected resizeLens() {
-    this.updateLensDimensions(this.image);
+    const [newDimensionValue, oldDimensionValue] = this.updateLensDimensions(this.image);
     this.calculateRatioBetweenResultAndLens();
     this.initializeZoomDivBackgroundSize(this.image);
+    const event = new UcZoomViewResizeLensDimensionsEvent(newDimensionValue, oldDimensionValue);
+    this.eventCallbacks.resizeLensDimensions(event);
   }
 
   protected setZoomViewResultImage(srcImg: HTMLImageElement): void {

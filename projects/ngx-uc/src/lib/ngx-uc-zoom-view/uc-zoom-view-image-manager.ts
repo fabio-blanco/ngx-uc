@@ -2,7 +2,7 @@ import {UcZoomViewManager} from "./uc-zoom-view-manager";
 import {ElementRef, Renderer2} from "@angular/core";
 
 import {UcZoomViewConfig} from "./uc-zoom-view-config";
-import {UcCoordinates} from "../uc-coordinates";
+import {UcZoomViewEventCallbacks, UcZoomViewImageSourceChangedEvent, UcZoomViewReadyEvent} from "./uc-zoom-view-events";
 
 export class UcZoomViewImageManager extends UcZoomViewManager{
 
@@ -20,8 +20,8 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
               renderer: Renderer2,
               protected ucZoomResultView: any,
               inputConfig: UcZoomViewConfig | undefined,
-              lensPositionUpdate: ((coordinates: UcCoordinates) => void)) {
-    super(elRef, renderer, inputConfig, lensPositionUpdate);
+              eventCallbacks: UcZoomViewEventCallbacks) {
+    super(elRef, renderer, inputConfig, eventCallbacks);
 
     if(!this.isElementA(elRef.nativeElement, 'img')) {
       throw TypeError('elRef should be a valid HTMLImageElement');
@@ -31,7 +31,7 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     this.srcMutationObserver = new MutationObserver((changes) => {
       changes.forEach(change => {
         if(change.attributeName === 'src') {
-          that.onImageSourceChange();
+          that.onImageSourceChange(change.oldValue);
         }
       });
     });
@@ -48,6 +48,9 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     this.initializeLensAndResult(rootImage);
     this.isInitialized = true;
     this.isImageLoaded = this.isImageAlreadyLoaded(rootImage);
+    if (this.isImageLoaded) {
+      this.eventCallbacks.readyEvent(new UcZoomViewReadyEvent());
+    }
   }
 
   destroy(): void {
@@ -154,7 +157,7 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
 
     const lensPos = this.calculateLensPosition(event, srcImg, this.lens);
     //this.lensPosition.emit(lensPos);
-    this.lensPositionUpdate(lensPos);
+    this.eventCallbacks.lensPositionUpdateEvent(lensPos);
 
     /* Set the position of the lens: */
     this.renderer.setStyle(this.lens, 'left', `${lensPos.x}px`);
@@ -188,6 +191,10 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
 
     this.initializeZoomDivBackgroundSize(srcImg);
     this.isImageLoaded = true;
+
+    if(this.isInitialized) {
+      this.eventCallbacks.readyEvent(new UcZoomViewReadyEvent());
+    }
   }
 
   private onImageLoadFailed() {
@@ -202,6 +209,8 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
       this.renderer.removeClass(this.zoomResult, this.config.cssClasses.hideLens);
     }
     this.renderer.removeClass(this.lens, this.config.cssClasses.hideLens);
+
+    this.eventCallbacks.zoomStarted();
   }
 
   finishZoom(): void {
@@ -213,12 +222,17 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
       this.renderer.addClass(this.zoomResult, this.config.cssClasses.hideLens);
     }
     this.renderer.addClass(this.lens, this.config.cssClasses.hideLens);
+
+    this.eventCallbacks.zoomEnded();
   }
 
-  private onImageSourceChange(): void {
+  private onImageSourceChange(oldValue: string | null): void {
     const srcImage = this.image;
     this.setZoomViewResultImage(srcImage);
     this.initializeZoomDivBackgroundSize(srcImage);
+    const oldV = (oldValue as string);
+    const event = new UcZoomViewImageSourceChangedEvent(srcImage.src, oldV);
+    this.eventCallbacks.imageSourceChanged(event);
   }
 
   private isSetExternalViewWithResetOn(): boolean {

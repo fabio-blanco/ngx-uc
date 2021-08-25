@@ -3,6 +3,7 @@ import {UcZoomViewConfig} from "./uc-zoom-view-config";
 import {UcCoordinates} from "../uc-coordinates";
 import {UcZoomViewManager} from "./uc-zoom-view-manager";
 import {UcZoomViewImageManager} from "./uc-zoom-view-image-manager";
+import {UcZoomViewImageSourceChangedEvent, UcZoomViewReadyEvent, UcZoomViewResizeLensDimensionsEvent} from "./uc-zoom-view-events";
 
 @Component({
   selector: 'img[uc-zoom-view]',
@@ -10,9 +11,6 @@ import {UcZoomViewImageManager} from "./uc-zoom-view-image-manager";
   template: '<ng-content></ng-content>'
 })
 export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
-
-  @Output()
-  lensPosition = new EventEmitter<UcCoordinates>();
 
   @Input('uc-zoom-view-config')
   ucZoomViewConfig?: UcZoomViewConfig;
@@ -34,12 +32,30 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ucZoomOnChange.emit(on);
   }
 
+  @Output()
+  ucZoomOnChange = new EventEmitter<boolean>();
+
+  @Output()
+  lensPosition = new EventEmitter<UcCoordinates>();
+
+  @Output()
+  ready = new EventEmitter<UcZoomViewReadyEvent>();
+
+  @Output()
+  zoomStarted = new EventEmitter<any>();
+
+  @Output()
+  zoomEnded = new EventEmitter<any>();
+
+  @Output()
+  imageSrcChanged = new EventEmitter<UcZoomViewImageSourceChangedEvent>();
+
+  @Output()
+  resizeLensDimensions = new EventEmitter<UcZoomViewResizeLensDimensionsEvent>();
+
   get ucZoomOn() {
     return this._ucZoomOn;
   }
-
-  @Output()
-  ucZoomOnChange = new EventEmitter<boolean>();
 
   get isReady() {
     return this.zoomViewManager.isReady;
@@ -72,7 +88,17 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
                                                       this.renderer,
                                                       this.ucZoomResultView,
                                                       this.ucZoomViewConfig,
-                                                      coordinates => this.lensPosition.emit(coordinates));
+                                                      {
+                                                        lensPositionUpdateEvent: coordinates => this.lensPosition.emit(coordinates),
+                                                        readyEvent: readyEvent => {
+                                                          readyEvent.component = this
+                                                          this.ready.emit(readyEvent)
+                                                        },
+                                                        zoomStarted: () => this.zoomStarted.emit(null),
+                                                        zoomEnded: () => this.zoomEnded.emit(null),
+                                                        imageSourceChanged: event => this.imageSrcChanged.emit(event),
+                                                        resizeLensDimensions: event => this.resizeLensDimensions.emit(event)
+                                                      });
 
   }
 

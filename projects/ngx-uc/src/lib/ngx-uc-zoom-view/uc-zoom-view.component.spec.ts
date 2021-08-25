@@ -5,6 +5,8 @@ import {UcZoomViewComponent} from './uc-zoom-view.component';
 import {UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig} from "./uc-zoom-view-config";
 import {UcZoomViewImageManager} from "./uc-zoom-view-image-manager";
 import {UcZoomViewManager} from "./uc-zoom-view-manager";
+import {UcZoomViewImageSourceChangedEvent, UcZoomViewReadyEvent, UcZoomViewResizeLensDimensionsEvent} from "./uc-zoom-view-events";
+import {UcCoordinates} from "../uc-coordinates";
 
 
 @Component({
@@ -110,6 +112,65 @@ class TestImageExternalZoomViewCustomizedComponent {
   ucZoomViewComponent!: UcZoomViewComponent;
 }
 
+@Component({
+  template: `
+<img id="theImage3" src="https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+     [style]="{'width': '500px'}" uc-zoom-view
+     (ready)="onZoomViewReady($event)"
+     (zoomStarted)="onZoomStarted()"
+     (zoomEnded)="onZoomEnded()"
+     (imageSrcChanged)="onImageSourceChange($event)"
+     (resizeLensDimensions)="onResizeLensDimensions($event)"
+     (lensPosition)="onLensPositionChangeOverTheImage($event)">
+  `
+  })
+class TestImageEventsDetectionComponent {
+
+  @ViewChild(UcZoomViewComponent)
+  ucZoomViewComponent!: UcZoomViewComponent;
+
+  readyComponent?: UcZoomViewComponent;
+  countOnReadyCalls = 0;
+
+  hasZoomStarted = false;
+  hasZoomEnded = false;
+
+  originalImageSource?: string;
+  newImageSource?: string;
+
+  originalLensDimensionValue?: number | null;
+  newLensDimensionValue?: number;
+
+  coordinates?: UcCoordinates;
+
+  onZoomViewReady(event: UcZoomViewReadyEvent): void {
+    this.readyComponent = event.component;
+    this.countOnReadyCalls++;
+  }
+
+  onZoomStarted(): void {
+    this.hasZoomStarted = true;
+  }
+
+  onZoomEnded(): void {
+    this.hasZoomEnded = true;
+  }
+
+  onImageSourceChange(event: UcZoomViewImageSourceChangedEvent): void {
+    this.originalImageSource = event.oldValue;
+    this.newImageSource = event.newValue;
+  }
+
+  onResizeLensDimensions(event: UcZoomViewResizeLensDimensionsEvent): void {
+    this.originalLensDimensionValue = event.oldValue;
+    this.newLensDimensionValue = event.newValue;
+  }
+
+  onLensPositionChangeOverTheImage(coordinates: UcCoordinates): void {
+    this.coordinates = coordinates;
+  }
+
+}
 
 describe('UcZoomViewComponent', () => {
   let component: UcZoomViewComponent;
@@ -640,4 +701,109 @@ describe('UcZoomViewComponent with custom options and resetExtViewOnMouseLeave t
       expect(zoomResultDiv.style.backgroundPosition).toBeTruthy();
     }, 400);
   });
+});
+
+
+describe('UcZoomViewComponent events', () => {
+  let component: TestImageEventsDetectionComponent;
+  let fixture: ComponentFixture<TestImageEventsDetectionComponent>;
+
+  let wrapperDiv: any;
+  let image: HTMLImageElement;
+
+  beforeEach(async () => {
+
+    await TestBed.configureTestingModule({
+      declarations: [TestImageEventsDetectionComponent, UcZoomViewComponent],
+      providers: [Renderer2]
+    }).compileComponents();
+
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(TestImageEventsDetectionComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    wrapperDiv = fixture.nativeElement.querySelector('div.uc-img-container');
+    image = component.ucZoomViewComponent.image;
+  });
+
+  it('should have called the ready event once', () => {
+    setTimeout(() => {
+      expect(component.readyComponent).toBeTruthy();
+      expect(component.countOnReadyCalls).toBe(1);
+    }, 400);
+  });
+
+  it('should call the zoom started event', () => {
+    setTimeout(() => {
+      const eventMouseEnter = new MouseEvent('mouseenter');
+
+      expect(component.hasZoomStarted).toBeFalse();
+
+      image.dispatchEvent(eventMouseEnter);
+      fixture.detectChanges();
+
+      expect(component.hasZoomStarted).toBeTrue();
+    }, 400);
+  });
+
+  it('should call the zoom ended event', () => {
+    setTimeout(() => {
+      const eventMouseEnter = new MouseEvent('mouseleave');
+
+      expect(component.hasZoomEnded).toBeFalse();
+
+      image.dispatchEvent(eventMouseEnter);
+      fixture.detectChanges();
+
+      expect(component.hasZoomEnded).toBeTrue();
+    }, 400);
+  });
+
+  it('should call the image source change event when image src has changed', () => {
+    setTimeout(() => {
+      const originalSrc = "https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260";
+      const newSrc = "https://images.pexels.com/photos/3481026/pexels-photo-3481026.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
+
+      image.src = newSrc;
+      fixture.detectChanges();
+
+      expect(component.originalImageSource).toBe(originalSrc);
+      expect(component.newImageSource).toBe(newSrc);
+    }, 400);
+  });
+
+  it('should call the resize lens dimensions event when image is resized', () => {
+    setTimeout(() => {
+      image.style.width = '300px';
+      fixture.detectChanges();
+
+      expect(component.originalLensDimensionValue).toBeTruthy();
+      expect(component.newLensDimensionValue).toBeTruthy();
+      const originalValue = (component.originalLensDimensionValue as number);
+      expect(component.newLensDimensionValue).not.toBe(originalValue);
+
+    }, 400);
+  });
+
+  it('should call the lens position update event when mouse is over the image', () => {
+    setTimeout(() => {
+      const imageRect = image.getBoundingClientRect();
+
+      const eventMouseOver = new MouseEvent('mouseover', {
+        clientX: imageRect.left + 20,
+        clientY: imageRect.top - 20
+      });
+
+      image.dispatchEvent(eventMouseOver);
+      fixture.detectChanges();
+
+      expect(component.coordinates).toBeTruthy();
+      expect(component.coordinates?.x).toEqual(jasmine.any(Number));
+      expect(component.coordinates?.y).toEqual(jasmine.any(Number));
+    }, 400);
+  });
+
 });

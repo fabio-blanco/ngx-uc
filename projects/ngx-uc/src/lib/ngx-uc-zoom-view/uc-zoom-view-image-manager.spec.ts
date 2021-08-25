@@ -1,7 +1,7 @@
 import { UcZoomViewImageManager } from './uc-zoom-view-image-manager';
 import {ElementRef, Renderer2, RendererStyleFlags2} from "@angular/core";
-import {UcCoordinates} from "../uc-coordinates";
 import {UC_ZOOM_VIEW_DEFAULT_CONFIG, UcZoomViewConfig} from "./uc-zoom-view-config";
+import {UcZoomViewEventCallbacks} from "./uc-zoom-view-events";
 
 describe('UcZoomViewImageManager', () => {
 
@@ -19,12 +19,19 @@ describe('UcZoomViewImageManager', () => {
     removeStyle(el: any, style: string, flags?: RendererStyleFlags2) {},
     listen(target: any, eventName: string, callback: (event: any) => (boolean | void)): () => void {return () => {}}
   };
-  let lensPositionCallback = (coordinates: UcCoordinates) => {}
+  let eventCallbacks: UcZoomViewEventCallbacks = {
+    lensPositionUpdateEvent: coordinates => {},
+    readyEvent: readyEvent => {},
+    zoomStarted: () => {},
+    zoomEnded: () => {},
+    imageSourceChanged: event => {},
+    resizeLensDimensions: event => {}
+  };
 
   beforeEach(() => {
     image = new Image(100,200);
     const elRef: ElementRef = new ElementRef(image);
-    zoomViewManager = new UcZoomViewImageManager(elRef, rendererStub, null, undefined, lensPositionCallback);
+    zoomViewManager = new UcZoomViewImageManager(elRef, rendererStub, null, undefined, eventCallbacks);
   });
 
   it('should create an instance', () => {
@@ -39,13 +46,19 @@ describe('UcZoomViewImageManager', () => {
     expect(returnedImage).toBe(image);
   });
 
-  it('.initializeViewer should wrap image, attach listeners, initialize lens and result, and become initialized', () => {
+  function prepareInitializeViewerTests(): void {
     spyOn(zoomViewManager, 'getNativeElement').and.returnValue(image);
 
     const wrapperDiv = document.createElement('div');
     spyOn<any>(zoomViewManager, 'wrapImage').and.returnValue(wrapperDiv);
     spyOn<any>(zoomViewManager, 'attachListenersToImage');
     spyOn<any>(zoomViewManager, 'initializeLensAndResult');
+    spyOn(zoomViewManager['eventCallbacks'], 'readyEvent');
+  }
+
+  it('.initializeViewer should wrap image, attach listeners, initialize lens and result, and become initialized', () => {
+    prepareInitializeViewerTests();
+    spyOn<any>(zoomViewManager, 'isImageAlreadyLoaded').and.returnValue(true);
 
     zoomViewManager.initializeViewer();
 
@@ -54,6 +67,16 @@ describe('UcZoomViewImageManager', () => {
     expect(zoomViewManager['initializeLensAndResult']).toHaveBeenCalledOnceWith(image);
     expect(zoomViewManager['isInitialized']).toBeTruthy();
     expect(zoomViewManager['outerDiv']).toBeDefined();
+    expect(zoomViewManager['eventCallbacks'].readyEvent).toHaveBeenCalled();
+  });
+
+  it('.initializeViewer should not emit ready event if image is not yet loaded', () => {
+    prepareInitializeViewerTests();
+    spyOn<any>(zoomViewManager, 'isImageAlreadyLoaded').and.returnValue(false);
+
+    zoomViewManager.initializeViewer();
+
+    expect(zoomViewManager['eventCallbacks'].readyEvent).not.toHaveBeenCalled();
   });
 
   it('.destroy should perform a cleaning on the state of the manager', () => {
@@ -147,7 +170,7 @@ describe('UcZoomViewImageManager', () => {
     };
 
     const elRef: ElementRef = new ElementRef(image);
-    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, {}, undefined, lensPositionCallback);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, {}, undefined, eventCallbacks);
 
     spyOn<any>(zoomViewImageManager, 'setZoomViewResultImage');
     spyOn<any>(zoomViewImageManager, 'initializeZoomDivBackgroundSize');
@@ -198,7 +221,7 @@ describe('UcZoomViewImageManager', () => {
   it('.setExternalZoomResultContainer should initialize the zoom result view with the external result view', () => {
     const customZoomResultDiv = document.createElement('div');
     const elRef: ElementRef = new ElementRef(image);
-    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, customZoomResultDiv, undefined, lensPositionCallback);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, customZoomResultDiv, undefined, eventCallbacks);
 
     (zoomViewImageManager as any).setExternalZoomResultContainer();
 
@@ -207,7 +230,7 @@ describe('UcZoomViewImageManager', () => {
 
   it('.setExternalZoomResultContainer should not accept a result view that is not a div', () => {
     const elRef: ElementRef = new ElementRef(image);
-    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, image, undefined, lensPositionCallback);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, image, undefined, eventCallbacks);
 
     expect( () => {(zoomViewImageManager as any).setExternalZoomResultContainer()}).toThrow(new TypeError('The view object is not a div. A custom zoom view should be a div.'));
   });
@@ -248,7 +271,7 @@ describe('UcZoomViewImageManager', () => {
     }
 
     const elRef: ElementRef = new ElementRef(image);
-    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, undefined, config, lensPositionCallback);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, undefined, config, eventCallbacks);
 
     zoomViewImageManager['isImageLoaded'] = true;
     zoomViewImageManager['isInitialized'] = true;
@@ -325,7 +348,7 @@ describe('UcZoomViewImageManager', () => {
   it('.initializeLensAndResult should properly initialize a custom zoom result view', () => {
     const customZoomResultDiv = document.createElement('div');
     const elRef: ElementRef = new ElementRef(image);
-    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, customZoomResultDiv, undefined, lensPositionCallback);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, customZoomResultDiv, undefined, eventCallbacks);
 
     prepareInitializeLensAndResultCustomView(zoomViewImageManager);
 
@@ -341,7 +364,7 @@ describe('UcZoomViewImageManager', () => {
     const customZoomResultDiv = document.createElement('div');
     const elRef: ElementRef = new ElementRef(image);
     const config: UcZoomViewConfig = {resetExtViewOnMouseLeave: false};
-    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, customZoomResultDiv, config, lensPositionCallback);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, customZoomResultDiv, config, eventCallbacks);
 
     prepareInitializeLensAndResultCustomView(zoomViewImageManager);
 
@@ -392,16 +415,37 @@ describe('UcZoomViewImageManager', () => {
     expect(zoomViewManager['updateLensDimensions']).not.toHaveBeenCalled();
   });
 
-  it('.onImageSourceChange should update the zoom view image', () => {
-    spyOn(zoomViewManager, 'getNativeElement').and.callThrough();
-    spyOn<any>(zoomViewManager, 'setZoomViewResultImage');
-    spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
+  function prepereOnImageSourceChangeTest(img: HTMLImageElement): UcZoomViewImageManager {
+    const elRef: ElementRef = new ElementRef(img);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, undefined, undefined, eventCallbacks);
 
-    (zoomViewManager as any).onImageSourceChange();
+    spyOn(zoomViewImageManager, 'getNativeElement').and.callThrough();
+    spyOn<any>(zoomViewImageManager, 'setZoomViewResultImage');
+    spyOn<any>(zoomViewImageManager, 'initializeZoomDivBackgroundSize');
+    spyOn(zoomViewImageManager['eventCallbacks'], 'imageSourceChanged');
 
-    expect(zoomViewManager['getNativeElement']).toHaveBeenCalled();
-    expect(zoomViewManager['setZoomViewResultImage']).toHaveBeenCalledOnceWith(image)
-    expect(zoomViewManager['initializeZoomDivBackgroundSize']).toHaveBeenCalledOnceWith(image);
+    return zoomViewImageManager;
+  }
+
+  it('.onImageSourceChange should update the zoom view image and emit the imageSourceChange event', () => {
+    const img = {
+      src: 'new-image.jpg',
+      tagName: 'IMG'
+    } as HTMLImageElement;
+
+    let zoomViewImageManager = prepereOnImageSourceChangeTest(img);
+
+    const oldValue = 'any-image.jpg';
+
+    (zoomViewImageManager as any).onImageSourceChange(oldValue);
+
+    expect(zoomViewImageManager['getNativeElement']).toHaveBeenCalled();
+    expect(zoomViewImageManager['setZoomViewResultImage']).toHaveBeenCalledOnceWith(img)
+    expect(zoomViewImageManager['initializeZoomDivBackgroundSize']).toHaveBeenCalledOnceWith(img);
+    expect(zoomViewImageManager['eventCallbacks'].imageSourceChanged).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+      newValue: img.src,
+      oldValue: oldValue
+    }));
   });
 
   function prepareUnwrapImageTest(zoomViewImageManager: UcZoomViewImageManager) {
@@ -437,7 +481,7 @@ describe('UcZoomViewImageManager', () => {
 
   it('.unWrapImage should not touch the external zoom view', () => {
     const elRef: ElementRef = new ElementRef(image);
-    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, {}, undefined, lensPositionCallback);
+    let zoomViewImageManager = new UcZoomViewImageManager(elRef, rendererStub, {}, undefined, eventCallbacks);
 
     prepareUnwrapImageTest(zoomViewImageManager);
 
@@ -453,13 +497,15 @@ describe('UcZoomViewImageManager', () => {
 
     spyOn<any>(zoomViewManager, 'initializeLensDimensions');
     spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
+    spyOn(zoomViewManager['eventCallbacks'], 'readyEvent');
+    zoomViewManager['isInitialized'] = true;
 
     zoomViewManager['onImageLoaded'](image);
 
     expect(zoomViewManager['initializeLensDimensions']).toHaveBeenCalledOnceWith(image);
     expect(zoomViewManager['initializeZoomDivBackgroundSize']).toHaveBeenCalledOnceWith(image);
     expect(zoomViewManager['isImageLoaded']).toBeTrue();
-
+    expect(zoomViewManager['eventCallbacks'].readyEvent).toHaveBeenCalled();
   });
 
   it('.onImageLoaded should not initialize the lens dimensions if lens size proportion was already calculated', ()=> {
@@ -473,6 +519,17 @@ describe('UcZoomViewImageManager', () => {
 
     expect(zoomViewManager['initializeLensDimensions']).not.toHaveBeenCalled();
 
+  });
+
+  it('.onImageLoaded should not emit ready event if the component is not initialized yet', ()=> {
+    spyOn<any>(zoomViewManager, 'initializeLensDimensions');
+    spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
+    spyOn(zoomViewManager['eventCallbacks'], 'readyEvent');
+    zoomViewManager['isInitialized'] = false;
+
+    zoomViewManager['onImageLoaded'](image);
+
+    expect(zoomViewManager['eventCallbacks'].readyEvent).not.toHaveBeenCalled();
   });
 
   it('.onImgMouseMove should do nothing if not ready', () => {
@@ -595,12 +652,12 @@ describe('UcZoomViewImageManager', () => {
 
     spyOn(rendererStub, 'setStyle');
 
-    spyOn<any>(zoomViewManager, 'lensPositionUpdate');
+    spyOn<any>(zoomViewManager['eventCallbacks'], 'lensPositionUpdateEvent');
 
     zoomViewManager['onImgMouseMove'](eventFake);
 
     expect(zoomViewManager['calculateLensPosition']).toHaveBeenCalledOnceWith(eventFake, eventImgDummy, lensDiv);
-    expect(zoomViewManager['lensPositionUpdate']).toHaveBeenCalledOnceWith(dummyPosition);
+    expect(zoomViewManager['eventCallbacks'].lensPositionUpdateEvent).toHaveBeenCalledOnceWith(dummyPosition);
   });
 
   it('.onImgMouseEnter should do nothing if not initialized', () => {
@@ -609,10 +666,12 @@ describe('UcZoomViewImageManager', () => {
     zoomViewManager['isImageLoaded'] = false;
 
     spyOn(rendererStub, 'removeClass');
+    spyOn(zoomViewManager['eventCallbacks'], 'zoomStarted');
 
     (zoomViewManager as any).onImgMouseEnter(eventFake);
 
     expect(rendererStub.removeClass).not.toHaveBeenCalled();
+    expect(zoomViewManager['eventCallbacks'].zoomStarted).not.toHaveBeenCalled();
   });
 
   it('.onImgMouseEnter should do nothing on component turned off', () => {
@@ -622,13 +681,15 @@ describe('UcZoomViewImageManager', () => {
     zoomViewManager.turnedOn = false;
 
     spyOn(rendererStub, 'removeClass');
+    spyOn(zoomViewManager['eventCallbacks'], 'zoomStarted');
 
     (zoomViewManager as any).onImgMouseEnter(eventFake);
 
     expect(rendererStub.removeClass).not.toHaveBeenCalled();
+    expect(zoomViewManager['eventCallbacks'].zoomStarted).not.toHaveBeenCalled();
   });
 
-  it('.onImgMouseEnter should display lens and zoom result', () => {
+  it('.onImgMouseEnter should display lens and zoom result and emit zoomStarted event', () => {
     const eventFake = new MouseEvent('mousemove');
 
     zoomViewManager['isImageLoaded'] = true;
@@ -638,11 +699,13 @@ describe('UcZoomViewImageManager', () => {
     zoomViewManager['zoomResult'] = document.createElement('div');
 
     spyOn(rendererStub, 'removeClass');
+    spyOn(zoomViewManager['eventCallbacks'], 'zoomStarted');
 
     (zoomViewManager as any).onImgMouseEnter(eventFake);
 
     expect(rendererStub.removeClass).toHaveBeenCalledWith(zoomViewManager['lens'], UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens);
     expect(rendererStub.removeClass).toHaveBeenCalledWith(zoomViewManager['zoomResult'], UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens);
+    expect(zoomViewManager['eventCallbacks'].zoomStarted).toHaveBeenCalled();
   });
 
   it('.onImgMouseEnter should not try to display the external zoom view', () => {
@@ -706,13 +769,15 @@ describe('UcZoomViewImageManager', () => {
     zoomViewManager['isImageLoaded'] = false;
 
     spyOn(rendererStub, 'addClass');
+    spyOn(zoomViewManager['eventCallbacks'], 'zoomEnded');
 
     (zoomViewManager as any).onImgMouseLeave(eventFake);
 
     expect(rendererStub.addClass).not.toHaveBeenCalled();
+    expect(zoomViewManager['eventCallbacks'].zoomEnded).not.toHaveBeenCalled();
   });
 
-  it('.onImgMouseLeave should hide lens and zoom result', () => {
+  it('.onImgMouseLeave should hide lens and zoom result and emit zoomEnded event', () => {
     const eventFake = new MouseEvent('mousemove');
 
     zoomViewManager['isImageLoaded'] = true;
@@ -722,11 +787,13 @@ describe('UcZoomViewImageManager', () => {
     zoomViewManager['zoomResult'] = document.createElement('div');
 
     spyOn(rendererStub, 'addClass');
+    spyOn(zoomViewManager['eventCallbacks'], 'zoomEnded');
 
     (zoomViewManager as any).onImgMouseLeave(eventFake);
 
     expect(rendererStub.addClass).toHaveBeenCalledWith(zoomViewManager['lens'], UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens);
     expect(rendererStub.addClass).toHaveBeenCalledWith(zoomViewManager['zoomResult'], UC_ZOOM_VIEW_DEFAULT_CONFIG.cssClasses.hideLens);
+    expect(zoomViewManager['eventCallbacks'].zoomEnded).toHaveBeenCalled();
   });
 
   it('.onImgMouseLeave should not try to hide the external zoom view', () => {
