@@ -497,7 +497,6 @@ describe('UcZoomViewImageManager', () => {
 
     spyOn<any>(zoomViewManager, 'initializeLensDimensions');
     spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
-    spyOn(zoomViewManager['eventCallbacks'], 'readyEvent');
     zoomViewManager['isInitialized'] = true;
 
     zoomViewManager['onImageLoaded'](image);
@@ -505,7 +504,6 @@ describe('UcZoomViewImageManager', () => {
     expect(zoomViewManager['initializeLensDimensions']).toHaveBeenCalledOnceWith(image);
     expect(zoomViewManager['initializeZoomDivBackgroundSize']).toHaveBeenCalledOnceWith(image);
     expect(zoomViewManager['isImageLoaded']).toBeTrue();
-    expect(zoomViewManager['eventCallbacks'].readyEvent).toHaveBeenCalled();
   });
 
   it('.onImageLoaded should not initialize the lens dimensions if lens size proportion was already calculated', ()=> {
@@ -519,17 +517,6 @@ describe('UcZoomViewImageManager', () => {
 
     expect(zoomViewManager['initializeLensDimensions']).not.toHaveBeenCalled();
 
-  });
-
-  it('.onImageLoaded should not emit ready event if the component is not initialized yet', ()=> {
-    spyOn<any>(zoomViewManager, 'initializeLensDimensions');
-    spyOn<any>(zoomViewManager, 'initializeZoomDivBackgroundSize');
-    spyOn(zoomViewManager['eventCallbacks'], 'readyEvent');
-    zoomViewManager['isInitialized'] = false;
-
-    zoomViewManager['onImageLoaded'](image);
-
-    expect(zoomViewManager['eventCallbacks'].readyEvent).not.toHaveBeenCalled();
   });
 
   it('.onImgMouseMove should do nothing if not ready', () => {

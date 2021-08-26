@@ -4,6 +4,7 @@ import {ElementRef, Renderer2} from "@angular/core";
 import {UcZoomViewConfig} from "./uc-zoom-view-config";
 import {UcZoomViewEventCallbacks, UcZoomViewImageSourceChangedEvent, UcZoomViewReadyEvent} from "./uc-zoom-view-events";
 
+
 export class UcZoomViewImageManager extends UcZoomViewManager{
 
   get image(): HTMLImageElement {
@@ -15,6 +16,7 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
   private readonly imageResizeObserver!: ResizeObserver;
 
   private unListeners: (() => void)[] = [];
+
 
   constructor(elRef: ElementRef,
               renderer: Renderer2,
@@ -48,8 +50,16 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     this.initializeLensAndResult(rootImage);
     this.isInitialized = true;
     this.isImageLoaded = this.isImageAlreadyLoaded(rootImage);
-    if (this.isImageLoaded) {
+    if (this.isReady) {
       this.eventCallbacks.readyEvent(new UcZoomViewReadyEvent());
+    } else {
+      const that = this;
+      let timerId = setInterval(() => {
+        if (that.isReady) {
+          that.eventCallbacks.readyEvent(new UcZoomViewReadyEvent());
+          clearInterval(timerId);
+        }
+      }, 200);
     }
   }
 
@@ -80,7 +90,7 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     this.unListeners.push(this.renderer.listen(srcImg, 'mouseenter', event => {this.onImgMouseEnter(event)}));
     this.unListeners.push(this.renderer.listen(srcImg, 'load', () => this.onImageLoaded(srcImg)));
     this.unListeners.push(this.renderer.listen(srcImg, 'error', ()=> this.onImageLoadFailed() ));
-    this.srcMutationObserver.observe(srcImg, {attributes: true});
+    this.srcMutationObserver.observe(srcImg, {attributes: true, attributeOldValue: true});
     if (this.config.lensOptions.automaticResize) {
       this.imageResizeObserver.observe(srcImg);
     }
@@ -192,9 +202,6 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
     this.initializeZoomDivBackgroundSize(srcImg);
     this.isImageLoaded = true;
 
-    if(this.isInitialized) {
-      this.eventCallbacks.readyEvent(new UcZoomViewReadyEvent());
-    }
   }
 
   private onImageLoadFailed() {
