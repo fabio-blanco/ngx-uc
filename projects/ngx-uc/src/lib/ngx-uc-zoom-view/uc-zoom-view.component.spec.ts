@@ -336,19 +336,39 @@ describe('UcZoomViewComponent', () => {
     expect(component['zoomViewManager']).toBeTruthy();
   });
 
-  it('.ngAfterViewInit should initialize the manager', () => {
+  function prepareNgAfterViewInitTest(autoInitializable: boolean): UcZoomViewManager {
     const zoomViewManagerFake = {
       initializeViewer() {},
-      destroy() {}
+      destroy() {},
+      isAutoInitializable() {
+        return autoInitializable;
+      },
+      turnedOn: false
     } as UcZoomViewManager;
 
     spyOn(zoomViewManagerFake, 'initializeViewer');
 
     component['zoomViewManager'] = zoomViewManagerFake;
 
+    return zoomViewManagerFake;
+  }
+
+  it('.ngAfterViewInit should initialize the manager', () => {
+    const zoomViewManagerFake = prepareNgAfterViewInitTest(true);
+
     component.ngAfterViewInit();
 
+    expect(zoomViewManagerFake.turnedOn).toBeTrue();
     expect(zoomViewManagerFake.initializeViewer).toHaveBeenCalled();
+  });
+
+  it('.ngAfterViewInit should not initialize the manager if not auto initializable', () => {
+    const zoomViewManagerFake = prepareNgAfterViewInitTest(false);
+
+    component.ngAfterViewInit();
+
+    expect(zoomViewManagerFake.turnedOn).toBeTrue();
+    expect(zoomViewManagerFake.initializeViewer).not.toHaveBeenCalled();
   });
 
   it('.ngOnDestroy should call the destroy on the manager', () => {
@@ -438,6 +458,20 @@ describe('UcZoomViewComponent', () => {
     expect(component.ucZoomOn).toBeFalse();
   });
 
+  it('.initialize() should initialize the manager', () => {
+    const zoomViewManagerFake = {
+      destroy() {},
+      initializeViewer() {}
+    } as UcZoomViewManager;
+
+    spyOn(zoomViewManagerFake, 'initializeViewer');
+
+    component['zoomViewManager'] = zoomViewManagerFake;
+
+    component.initialize();
+
+    expect(zoomViewManagerFake.initializeViewer).toHaveBeenCalled();
+  });
 
 });
 
@@ -931,7 +965,7 @@ describe('UcZoomViewComponent events', () => {
     }, 500);
   });
 
-  //FIXME: find out why this test isn't working
+  //FIXME: find out why this test isn't working wile the tested code seems to work just fine on the browser
   xit('should call the resize lens dimensions event when image is resized', (done) => {
     setTimeout(() => {
       image.style.width = '300px';

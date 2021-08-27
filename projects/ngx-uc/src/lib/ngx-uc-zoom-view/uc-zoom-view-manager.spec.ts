@@ -114,6 +114,7 @@ describe('UcZoomViewManager', () => {
     expect(mergedConfig.lensOptions.automaticResize).toBeTrue();
     expect(mergedConfig.lensOptions.sizeProportion).toBe('inferred');
     expect(mergedConfig.lensOptions.baseProportionType).toBe(UcZoomViewLensProportionType.WIDTH);
+    expect(mergedConfig.autoInitialize).toBeTrue();
   }
 
   it('.mergeConfig should properly merge with no provided config', () => {
@@ -159,7 +160,8 @@ describe('UcZoomViewManager', () => {
         automaticResize: false,
         sizeProportion: 0.3,
         baseProportionType: UcZoomViewLensProportionType.HEIGHT
-      }
+      },
+      autoInitialize: false
     };
 
     const result = (UcZoomViewManager as any).mergeConfig(config, fullyProvidedConfig);
@@ -176,6 +178,16 @@ describe('UcZoomViewManager', () => {
     expect(result.lensOptions.automaticResize).toBe(fullyProvidedConfig.lensOptions?.automaticResize);
     expect(result.lensOptions.sizeProportion).toBe(fullyProvidedConfig.lensOptions?.sizeProportion);
     expect(result.lensOptions.baseProportionType).toBe(fullyProvidedConfig.lensOptions?.baseProportionType);
+    expect(result.autoInitialize).toBeFalse();
+  });
+
+  it('.isAutoInitializable should return true if this component is auto-initializable', () => {
+    expect(zoomViewManager.isAutoInitializable()).toBeTrue();
+  });
+
+  it('.isAutoInitializable should return false if this component is not auto-initializable', () => {
+    zoomViewManager['config'].autoInitialize = false;
+    expect(zoomViewManager.isAutoInitializable()).toBeFalse();
   });
 
   it('.getNativeElement should return the root native element', () => {

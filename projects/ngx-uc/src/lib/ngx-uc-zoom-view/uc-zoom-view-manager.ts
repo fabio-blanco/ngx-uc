@@ -90,10 +90,15 @@ export abstract class UcZoomViewManager {
         sizeProportion: inputConfig?.lensOptions?.sizeProportion ? inputConfig.lensOptions.sizeProportion : defaultConfig.lensOptions.sizeProportion,
         baseProportionType: (typeof(inputConfig?.lensOptions?.baseProportionType) !== 'undefined') ?
           inputConfig.lensOptions.baseProportionType : defaultConfig.lensOptions.baseProportionType
-      }
+      },
+      autoInitialize: (typeof(inputConfig?.autoInitialize) !== 'undefined') ? inputConfig.autoInitialize : defaultConfig.autoInitialize
     };
 
     return merged;
+  }
+
+  isAutoInitializable(): boolean {
+    return this.config.autoInitialize;
   }
 
   isElementA(element: any, tagName: string): boolean {

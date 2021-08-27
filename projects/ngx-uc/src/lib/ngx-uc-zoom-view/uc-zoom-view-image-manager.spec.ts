@@ -79,6 +79,16 @@ describe('UcZoomViewImageManager', () => {
     expect(zoomViewManager['eventCallbacks'].readyEvent).not.toHaveBeenCalled();
   });
 
+  it('.initializeViewer should not initialize if already initialized', () => {
+    prepareInitializeViewerTests();
+
+    zoomViewManager['isInitialized'] = true;
+
+    zoomViewManager.initializeViewer();
+
+    expect(zoomViewManager['wrapImage']).not.toHaveBeenCalled();
+  });
+
   it('.destroy should perform a cleaning on the state of the manager', () => {
 
     spyOn<any>(zoomViewManager, 'unWrapImage');

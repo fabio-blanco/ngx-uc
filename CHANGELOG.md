@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support to five more events on the public api of the `uc-zoom_view` component totalizing 
 seven events (`ucZoomOnChange`, `lensPosition`, `ready`, `zoomStarted`, `zoomEnded`,
 `imageSrcChanged`, `resizeLensDimensions`)
+- Added a new config property `autoInitialize` (which defaults to true) to control if the 
+component will auto initialize or not. A `autoInitialize=false` component can be initialized 
+manually later.
+- Added a new `initialize()` method to the public api to allow for a late initialization.
 
 ## [Initial Alpha Releases]
 

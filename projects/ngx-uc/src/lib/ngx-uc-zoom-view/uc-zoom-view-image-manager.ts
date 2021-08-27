@@ -44,6 +44,11 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
   }
 
   initializeViewer(): void {
+    if (this.isInitialized) {
+      // do not reinitialize
+      return;
+    }
+
     const rootImage = this.image;
     this.outerDiv = this.wrapImage(rootImage);
     this.attachListenersToImage(rootImage);

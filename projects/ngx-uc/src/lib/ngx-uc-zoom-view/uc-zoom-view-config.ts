@@ -10,6 +10,7 @@ export interface UcZoomViewConfig {
     sizeProportion?: number | UcLensProportionInferred,
     baseProportionType?: UcZoomViewLensProportionType
   };
+  autoInitialize?: boolean;
 }
 
 export interface EnforcedUcZoomViewConfig {
@@ -22,6 +23,7 @@ export interface EnforcedUcZoomViewConfig {
     sizeProportion: number | UcLensProportionInferred,
     baseProportionType: UcZoomViewLensProportionType
   };
+  autoInitialize: boolean;
 }
 
 export type UcLensProportionInferred = 'inferred';
@@ -51,5 +53,6 @@ export const UC_ZOOM_VIEW_DEFAULT_CONFIG: EnforcedUcZoomViewConfig = {
     automaticResize: true,
     sizeProportion: 'inferred',
     baseProportionType: UcZoomViewLensProportionType.WIDTH
-  }
+  },
+  autoInitialize: true
 };

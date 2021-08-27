@@ -104,13 +104,19 @@ export class UcZoomViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.zoomViewManager.turnedOn = this.ucZoomOn;
-    this.zoomViewManager.initializeViewer();
+    if(this.zoomViewManager.isAutoInitializable()){
+      this.initialize();
+    }
   }
 
   ngOnDestroy(): void {
     if (this.zoomViewManager) {
       this.zoomViewManager.destroy();
     }
+  }
+
+  initialize(): void {
+    this.zoomViewManager.initializeViewer();
   }
 
 }
