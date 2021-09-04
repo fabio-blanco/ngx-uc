@@ -1,3 +1,5 @@
 theme: jekyll-theme-hacker
 plugins:
   - jekyll-seo-tag
+
+google_analytics: G-EP5SCVB7DZ
