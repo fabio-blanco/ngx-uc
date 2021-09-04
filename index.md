@@ -1,3 +1,5 @@
+![ngx-uc logo](/assets/ngx-uc-social-preview-logo.png)
+
 ## Project status ##
 
 Ngx-uc is currently under development and there is still no official releases yet. All initial alpha 
@@ -5,6 +7,10 @@ releases (all 0.x.x versions) can have breaking changes. Try it at your own risk
 
 The [changelog](https://github.com/fabio-blanco/ngx-uc/blob/master/CHANGELOG.md) details the 
 progress of the work.
+
+## Documentation ##
+
+- [V0.5.0](./docs/v0.5.0/index.html)
 
 ## Examples ##
 
