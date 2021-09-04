@@ -100,7 +100,7 @@ Sometimes it is useful to turn off the zoom feature. The `uc-zoom-view` offers p
 <img src="assets/img/example-1200x746.jpg" [style]="{'width': '500px'}"  
      uc-zoom-view [(ucZoomOn)]="on" alt="Example image"> <br>
 
-<button (click)="toggleSwitch()">Turn Zoom {{!on ? 'on' : 'off'}}</button>
+<button (click)="toggleSwitch()">Turn Zoom {% raw %} {{!on ? 'on' : 'off'}} {% endraw %}</button>
 ```
 
 ```typescript
