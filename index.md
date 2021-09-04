@@ -1,37 +1,56 @@
-## Welcome to GitHub Pages
+## Project status ##
 
-You can use the [editor on GitHub](https://github.com/fabio-blanco/ngx-uc/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Ngx-uc is currently under development and there is still no official releases yet. All initial alpha 
+releases (all 0.x.x versions) can have breaking changes. Try it at your own risk.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+The [changelog](https://github.com/fabio-blanco/ngx-uc/blob/master/CHANGELOG.md) details the 
+progress of the work.
 
-### Markdown
+## Examples ##
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+A [live demo](https://fabio-blanco.github.io/ngx-uc-example) is available to demonstrate 
+usage examples of the ngx-uc library components. The [source code of the examples](https://github.com/fabio-blanco/ngx-uc-example) 
+is also available if you want to play with it.
 
-```markdown
-Syntax highlighted code block
+## Getting Started ##
 
-# Header 1
-## Header 2
-### Header 3
+1. To install the ngx-uc, open a terminal and at the root of your project, run:
+   ```shell
+   npm install ngx-uc
+   ```
+2. Import the style in your `angular.json` file in the styles entry (project > architect > build > styles):
+   ```json
+   "styles": [
+     "node_modules/ngx-uc/resources/uc.css",
+     "src/styles.css"
+   ]
+   ```
+   
+3. Import the module:
+   ```typescript
+   import { NgModule } from '@angular/core';
 
-- Bulleted
-- List
+   import { NgxUcModule } from 'ngx-uc';
 
-1. Numbered
-2. List
+   import { AppRoutingModule } from './app-routing.module';
+   import { AppComponent } from './app.component';
 
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/fabio-blanco/ngx-uc/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+   @NgModule({
+     declarations: [
+       AppComponent
+    ],
+    imports: [
+      BrowserModule,
+      AppRoutingModule,
+      NgxUcModule
+    ],
+    providers: [],
+      bootstrap: [AppComponent]
+   })
+   export class AppModule { }
+   ```
+   
+4. In a template, add the `uc-zoom-view` directive to an image tag:
+   ```html
+   <img src="your-image.jpg" uc-zoom-view >
+   ```
