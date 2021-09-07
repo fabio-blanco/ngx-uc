@@ -10,6 +10,10 @@ releases (all 0.x.x versions) can have breaking changes. Try it at your own risk
 The [changelog](https://github.com/fabio-blanco/ngx-uc/blob/master/CHANGELOG.md) details the 
 progress of the work.
 
+## Docs
+
+You can see the ngx-uc documentation in the [official site](https://fabio-blanco.github.io/ngx-uc/?utm_source=github&utm_medium=readme).
+
 ## Examples ##
 
 A [live demo](https://fabio-blanco.github.io/ngx-uc-example) is available to demonstrate 
