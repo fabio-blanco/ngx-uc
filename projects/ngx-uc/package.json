@@ -1,6 +1,6 @@
 {
   "name": "ngx-uc",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "Description": "An image zoom library for Angular projects.",
   "author": {
     "name": "Fábio Blanco"

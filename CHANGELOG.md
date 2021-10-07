@@ -16,12 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Fixed a bug on `uc-zoom-view` destroy when some of its dom elements was already removed from
-the document generating a TypeError thrown from the methods called by renderer
 
 ## [Initial Alpha Releases]
+
+### [0.5.1] - 2021-10-06
+
+#### Fixed
+
+- Fixed a bug on `uc-zoom-view` `onDestroy` when some of its dom elements was already removed from
+  the document generating a TypeError thrown from the methods called by renderer
 
 ### [0.5.0] - 2021-08-27
 
@@ -117,8 +120,9 @@ the document generating a TypeError thrown from the methods called by renderer
 - The starting bootstrap point of the project
 
 
-[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/fabio-blanco/ngx-uc/compare/v0.5.1...HEAD
 [Initial Alpha Releases]: https://github.com/fabio-blanco/ngx-uc/compare/0.0.1...HEAD
+[0.5.1]: https://github.com/fabio-blanco/ngx-uc/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/fabio-blanco/ngx-uc/compare/v0.4.0...v0.4.1
