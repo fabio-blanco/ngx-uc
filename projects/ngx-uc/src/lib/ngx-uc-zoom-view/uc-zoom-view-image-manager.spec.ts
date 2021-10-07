@@ -501,6 +501,30 @@ describe('UcZoomViewImageManager', () => {
 
   });
 
+  it('.unWrapImage should not perform any dom modifications if the image is undefined', () => {
+
+    prepareUnwrapImageTest(zoomViewManager);
+
+    (zoomViewManager as any).unWrapImage(undefined as unknown as HTMLImageElement);
+
+    expect(rendererStub.removeChild).not.toHaveBeenCalled();
+    expect(rendererStub.parentNode).not.toHaveBeenCalled();
+    expect(rendererStub.insertBefore).not.toHaveBeenCalled();
+
+  });
+
+  it('.unWrapImage should not perform any dom modifications if the image is null', () => {
+
+    prepareUnwrapImageTest(zoomViewManager);
+
+    (zoomViewManager as any).unWrapImage(null as unknown as HTMLImageElement);
+
+    expect(rendererStub.removeChild).not.toHaveBeenCalled();
+    expect(rendererStub.parentNode).not.toHaveBeenCalled();
+    expect(rendererStub.insertBefore).not.toHaveBeenCalled();
+
+  });
+
   it('.onImageLoaded should initialize the background image size of the zoom div and the lens dimensions and set the isImageLoaded flag', ()=> {
 
     (zoomViewManager['lensSizeProportion'] as any) = undefined;

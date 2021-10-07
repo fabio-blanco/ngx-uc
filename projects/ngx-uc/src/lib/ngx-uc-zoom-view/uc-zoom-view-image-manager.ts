@@ -80,14 +80,16 @@ export class UcZoomViewImageManager extends UcZoomViewManager{
   }
 
   private unWrapImage(srcImg:HTMLImageElement): void {
-    this.renderer.removeChild(this.outerDiv, srcImg);
-    this.renderer.removeChild(this.outerDiv, this.lens);
-    if (!this.ucZoomResultView) {
-      this.renderer.removeChild(this.outerDiv, this.zoomResult);
+    if(srcImg && this.outerDiv) {
+      this.renderer.removeChild(this.outerDiv, srcImg);
+      this.renderer.removeChild(this.outerDiv, this.lens);
+      if (!this.ucZoomResultView) {
+        this.renderer.removeChild(this.outerDiv, this.zoomResult);
+      }
+      const parent = this.renderer.parentNode(this.outerDiv);
+      this.renderer.insertBefore(parent, srcImg, this.outerDiv, true);
+      this.renderer.removeChild(parent, this.outerDiv);
     }
-    const parent = this.renderer.parentNode(this.outerDiv);
-    this.renderer.insertBefore(parent, srcImg, this.outerDiv, true);
-    this.renderer.removeChild(parent, this.outerDiv);
   }
 
   private attachListenersToImage(srcImg:HTMLImageElement): void {

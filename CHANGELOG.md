@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a bug on `uc-zoom-view` destroy when some of its dom elements was already removed from
+the document generating a TypeError thrown from the methods called by renderer
 
 ## [Initial Alpha Releases]
 
@@ -23,10 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Added
 
-- Added support to five more events on the public api of the `uc-zoom_view` component totalizing
+- Added support to five more events on the public api of the `uc-zoom-view` component totalizing
   seven events (`ucZoomOnChange`, `lensPosition`, `ready`, `zoomStarted`, `zoomEnded`,
   `imageSrcChanged`, `resizeLensDimensions`)
-- Added to component `uc-zoom_view` a new config property `autoInitialize` (which defaults to true)
+- Added to component `uc-zoom-view` a new config property `autoInitialize` (which defaults to true)
   to control if the component will auto initialize or not. A `autoInitialize=false` component can
   be initialized manually later.
 - Added to component `uc-zoom_view` a new `initialize()` method to the public api to allow for a
